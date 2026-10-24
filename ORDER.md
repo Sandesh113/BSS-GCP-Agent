@@ -22,7 +22,7 @@ The contract review flags missing provider identity, tax-inclusive pricing, extr
 
 ## Optional email
 
-Email is sent only after a person presses **Email draft PDF**. The example.com address cannot be used for delivery. The app needs SMTP credentials through environment variables: `SMTP_HOST`, `SMTP_FROM`, `SMTP_PORT` (default `587`), and optionally both `SMTP_USERNAME` and `SMTP_PASSWORD`. It uses STARTTLS. SMTP is not configured in Cloud Run, so the UI reports the limitation and the PDF remains downloadable. No email was sent as part of development or cloud testing; the unit tests use a fake SMTP client.
+Email is sent only after a person presses **Email draft PDF with Google**, authorizes the configured Gmail sender, and supplies a real recipient. The example.com address cannot be used for delivery. Cloud Run uses the Gmail API with a short-lived `gmail.send` token; it does not store a mailbox password or refresh token. Local SMTP remains an optional alternative when configured with `SMTP_HOST`, `SMTP_FROM`, `SMTP_PORT` (default `587`), and optionally `SMTP_USERNAME` and `SMTP_PASSWORD`. The PDF remains downloadable without email. Automated tests use fake delivery clients; a real Gmail send requires mailbox consent in the browser.
 
 ## Reproduce
 
