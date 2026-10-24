@@ -1,11 +1,14 @@
 {
   "catalogueOffer": "po-cloud-demo-3gb",
-  "catalogueVersion": "609d1b8d-9058-430d-a9ea-410bd3028330",
+  "catalogueVersion": "e2d1a7d6-c5ea-4c88-a963-ee7f83adfd77",
+  "mismatchedUnitRejected": true,
+  "quoteHasValidityPeriod": true,
   "cpqStatus": "VALIDATED",
-  "productOrderId": "order-e3dc06c85296",
+  "productOrderId": "MOB-2208-24102026-0001",
   "productOrderState": "acknowledged",
   "cfsActionCount": 3,
-  "contractPdfBytes": 2464,
+  "contractPdfBytes": 2468,
   "agentStatus": "VALIDATED",
-  "agentOffer": "po-cloud-demo-3gb"
+  "agentOffer": "po-cloud-demo-3gb",
+  "agentResultCommercialOnly": true
 }

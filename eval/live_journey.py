@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import time
 from pathlib import Path
@@ -23,6 +24,14 @@ def main():
         return response
 
     catalogue = call("GET", "/api/catalogue").json()
+    # A mismatched leaf/CFS unit must be rejected without changing the saved catalogue.
+    invalid = copy.deepcopy(catalogue)
+    invalid["productSpecifications"].append({
+        "id": "ps-eval-invalid-tb", "name": "Invalid TB mapping", "isBundle": False,
+        "characteristic": "dataGb", "unit": "TB", "serviceSpecificationIds": ["cfs-data"],
+    })
+    rejected = session.put(base + "/api/catalogue", json=invalid, timeout=130)
+    assert rejected.status_code == 400 and "unit" in rejected.json()["error"]
     offer_id = "po-cloud-demo-3gb"
     if not any(row["id"] == offer_id for row in catalogue["productOfferings"]):
         catalogue["productSpecifications"].append({
@@ -55,9 +64,12 @@ def main():
         "promotionId": None,
     }).json()
     assert quote["status"] == "VALIDATED", quote
+    assert quote["quote"]["state"] == "approved"
+    assert quote["quote"]["validFor"]["endDateTime"] > quote["quote"]["validFor"]["startDateTime"]
     prepared = call("GET", f"/api/cpq/quotes/{quote['quote']['id']}/order-payload").json()
     order = call("POST", "/tmf-api/productOrderingManagement/v5/productOrder",
                  json=prepared["productOrder"]).json()
+    assert order["id"].startswith("MOB-")
     details = call("GET", f"/api/cpq/orders/{order['id']}").json()
     actions = details["serviceOrder"]["orderItem"]
     assert [row["service"]["serviceSpecification"]["id"] for row in actions] == [
@@ -80,14 +92,18 @@ def main():
     assert agent_result is not None, "Cloud agent result did not arrive"
     assert agent_result["status"] == "VALIDATED", agent_result
     assert agent_result["quote"]["quoteItem"][0]["productOffering"]["id"] == offer_id
-    assert len(agent_result["serviceOrder"]["orderItem"]) == 3
+    assert "serviceOrder" not in agent_result
+    assert "catalogue" not in agent_result and "rules" not in agent_result and "policy" not in agent_result
+    assert agent_result["quote"]["state"] == "approved"
 
     report = {
         "catalogueOffer": offer_id, "catalogueVersion": saved["version"],
+        "mismatchedUnitRejected": True, "quoteHasValidityPeriod": True,
         "cpqStatus": quote["status"], "productOrderId": order["id"],
         "productOrderState": order["state"], "cfsActionCount": len(actions),
         "contractPdfBytes": len(pdf.content), "agentStatus": agent_result["status"],
         "agentOffer": agent_result["quote"]["quoteItem"][0]["productOffering"]["id"],
+        "agentResultCommercialOnly": True,
     }
     Path(args.output).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))

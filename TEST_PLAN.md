@@ -1,6 +1,6 @@
 # Expert test plan and review — 24 October 2026
 
-Scope: the local code paths (catalogue, decision tables, CPQ, TMF622 order, contract PDF, email, Pub/Sub function, agent, guided assistant). Cloud resources were not redeployed or re-tested live. The cases are in [tests/test_expert_review.py](tests/test_expert_review.py); IDs below match the test names.
+Scope: catalogue, decision tables, CPQ, TMF622 order, contract PDF, email, Pub/Sub function, agent, and guided assistant. The cases are in [tests/test_expert_review.py](tests/test_expert_review.py); IDs below match the test names. The updated UI, function, and agent were deployed to Google Cloud after the local review.
 
 TM Forum references were checked against the published TMF648 v4.0.0 swagger (`QuoteStateType` = `rejected | pending | inProgress | cancelled | approved | accepted`; `Quote.validFor` is a `TimePeriod`; `Error` requires `code` and `reason`). The project remains **TMF-shaped**, not CTK-conformant.
 
@@ -13,6 +13,8 @@ TM Forum references were checked against the published TMF648 v4.0.0 swagger (`Q
 | Full suite after fixes | **111 passed**. The real `ui/quotes.json` was left unchanged. |
 | `eval/run_local.py` | 17/17 labelled cases passed. |
 | `catalogue_design/check_design.py` | Reference integrity OK. |
+| Cloud journey after deployment | Passed: invalid TB-to-GB catalogue mapping rejected; quote validity period and approved state present; TMF622 order, three CFS actions and draft PDF created; Pub/Sub agent returned VALIDATED for the published offer, with no service-order or internal snapshots in the sales result. See [live journey report](eval/live_journey_report.json). |
+| Terraform drift checks | UI and workload: no changes after deployment. |
 
 ## Faults found and fixed
 
@@ -44,4 +46,4 @@ CAT-04 nested/self bundles; CAT-05 service design cannot be smuggled through the
 3. **Active offerings are editable in place.** Price or allowance edits to an Active offer have no version bump (TMF620 `version`/`lastUpdate`). Prior orders keep their snapshots, but there is no audit of the change.
 4. **Promotion quotes can never be ordered in the UI.** The seed approval table holds every discount, and there is no approval inbox.
 5. **`ui/quotes.json` grows without bound.** Each quote stores full catalogue, rule and policy snapshots (about 18 KB each; 778 KB for 43 quotes). Store digests and deduplicate snapshots, or prune expired quotes.
-6. **Redeploy needed.** These changes are local. The Cloud Run UI image, the Pub/Sub function archive and the staged agent pickle must be rebuilt and redeployed for the fixes to reach the cloud.
+6. **Cloud scope.** The UI, Pub/Sub function, and staged agent have been redeployed. The live journey covered the primary flow; fault injection and every negative case in this plan were verified locally, not individually against cloud services.
