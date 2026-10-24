@@ -39,6 +39,19 @@ TM Forum references were checked against the published TMF648 v4.0.0 swagger (`Q
 
 CAT-04 nested/self bundles; CAT-05 service design cannot be smuggled through the PM API; RUL-01 per-item half-up rounding (33.33% → £8.00 + £1.67 = £9.67); RUL-02 `exists false` and `notIn`; RUL-03 disproved higher-priority row falls through; RUL-04 approval helper needs a pending quote and records rejection; CPQ-03 commitment uses each item's own term (£158.00); CPQ-04 promotion attribution and unknown promotion; CPQ-05 TMF679 segment qualification; ORD-03 order totals and per-item `itemTerm`; ORD-04 unknown quote reference; ORD-05 PDF xref offsets and text escaping; CUS-01 postcode/mobile normalisation and UK-only fields.
 
+## Addition: spoken and typed rule authoring
+
+[tests/test_rule_assistant.py](tests/test_rule_assistant.py) adds 17 cases for **Say or type a rule** (Gemini replaced by a fixed proposal). They cover:
+- a drafted row that changes the next quote only after **Save rules**
+- stale-version 409 and clarifying questions
+- nine invalid proposals rejected without saving: unknown table, `eval` operator, calculated discount in a price row, injected column key, redefined column, extra row fields, negative price, reversed dates and too many columns
+- add-only behaviour with duplicate-ID suffixing and a same-priority warning
+- string priorities
+- model input keys written as `request.<key>`, `context.<key>`, or `request.context.<key>` are normalized to the customer context
+- model failure (502) and serving of `voice.js`
+
+Full suite: **128 passed**. Checked in a local browser: the panel renders, a model failure shows its message, and **Add to editor** adds the row and the new customer input. In the hosted Cloud Run app, a live Gemini draft returned a validated price row and customer input without saving; the first live attempt exposed the prefixed-input-key issue, which was fixed and retested. The seeded rule tables were written to private Cloud Storage, matched the hosted API response, and produced a VALIDATED £12.00 Mobile Mini quote preview. Terraform reported no UI drift after deployment.
+
 ## Not changed — recommended next steps
 
 1. **Dead-letter topic** for the request subscription (Terraform `infra/workload`). The code fix stops deterministic retries; transient model outages still retry without a cap. This needs a reviewed `plan`/`apply`.

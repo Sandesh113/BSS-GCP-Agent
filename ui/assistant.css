@@ -20,6 +20,14 @@
 .assistant-review{margin-top:14px;border:1px solid #cbdcf8;background:#f1f6ff;border-radius:11px;padding:15px}
 .assistant-review h3{font:800 15px Manrope;margin:0 0 9px}
 .assistant-review p{color:#40567b;font-size:12px;line-height:1.5;margin-top:5px}
+.rule-assistant{margin-bottom:16px}
+.rule-assistant h2{font:800 17px Manrope;margin:4px 0 0}
+.rule-assistant>p{color:#7889a4;font-size:12px;line-height:1.5;margin:6px 0 12px}
+.rule-assistant .assistant-review ul{margin:6px 0 0 18px;color:#40567b;font-size:12px;line-height:1.5}
+.rule-assistant .rule-review-actions{display:flex;gap:8px;margin-top:12px}
+.rule-assistant .rule-review-warning{color:#8a5a00}
+.rule-assistant-error{color:#a72b3a;font-size:12px;margin-top:8px}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .assistant-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:13px}
 .assistant-footer p{color:#a72b3a;font-size:12px}
 .assistant-dialog button:disabled{opacity:.55;cursor:wait}

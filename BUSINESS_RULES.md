@@ -20,6 +20,18 @@ For example, add a numeric `contractMonths` input and a Prices row with these co
 
 This is an illustrative override, not a seeded tariff. The offering's price is the fallback when no price row matches. Rules use GBP and pre-tax amounts in the current prototype.
 
+## Describe a rule in words or by voice
+
+At the top of **Business rules**, **Say or type a rule** accepts a sentence such as "Mobile Mini costs £15 a month on a 24-month contract from 1 April 2027". The microphone records up to 30 seconds and uses the same Gemini transcription as the product assistant; review the text before choosing **Draft rule**.
+
+Gemini drafts exactly one new row, in one table, plus at most three new customer input columns (`request.context.<key>`). [rule_assistant.py](rule_assistant.py) adds them to a copy of the saved rules and runs the full `validate_rules` check. The review card shows the conditions, outcome, priority, dates, new columns and a warning if another enabled row has the same priority. If the sentence is ambiguous, Gemini asks one clarifying question instead.
+
+The four executable decision tables are saved in the private Google Cloud Storage state bucket as `state/rules.json`; the hosted API reads that object. The 72-rule library in `catalogue_design/` remains a design reference and is not automatically executed.
+
+- The assistant can only add. It cannot edit, disable or delete existing rows, create offer or calculated columns, or redefine an existing column.
+- Drafting saves nothing. **Add to editor** places the row in the page's unsaved copy, alongside any manual edits. **Save rules** then validates and versions the whole configuration, with the usual stale-version (HTTP 409) protection.
+- An invalid proposal returns HTTP 400 with the validator's reason; a model failure returns HTTP 502. Typed or manual editing always remains available.
+
 ## Execution semantics
 
 The order for each selected offer is **eligibility → price → discount → approval**.

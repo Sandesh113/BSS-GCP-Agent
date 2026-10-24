@@ -35,6 +35,7 @@
       <section id="rules-view" class="view hidden">
         <div class="heading"><div><div class="eyebrow">CONFIGURABLE DECISION TABLES</div><h1>Business rules</h1><p>Change conditions and outcomes as table rows. Saved changes apply to the next preview.</p></div><button id="save-rules" class="primary">Save rules</button></div>
         <div class="notice"><span>ⓘ</span><div><strong>How matching works</strong><p>All conditions in a row must match. The highest priority wins. Equal-priority matches are rejected. Prices, discounts, eligibility and approvals each have a fallback.</p></div></div>
+        <div class="panel rule-assistant"><div class="eyebrow">DESCRIBE A RULE</div><h2>Say or type a rule</h2><p>Gemini drafts one new row, plus any customer input column it needs. The rules engine validates it. Nothing changes until you add it to the editor and choose Save rules.</p><form id="rule-assistant-form"><label for="rule-assistant-text" class="visually-hidden">Rule</label><div class="assistant-input-row"><textarea id="rule-assistant-text" rows="2" maxlength="1000" placeholder="For example: Mobile Mini costs £15 a month on a 24-month contract from 1 April 2027" required></textarea><button id="rule-assistant-mic" class="secondary" type="button" aria-label="Speak the rule" title="Record the rule for Gemini transcription">🎙</button></div><div class="assistant-form-actions"><span id="rule-assistant-note" role="status" aria-live="polite">Type the rule, or press the microphone to record it.</span><button id="rule-assistant-send" class="primary" type="submit">Draft rule</button></div></form><div id="rule-assistant-review" class="assistant-review hidden"></div><p id="rule-assistant-error" class="rule-assistant-error" role="alert"></p></div>
         <div id="rule-tabs" class="rule-tabs" role="tablist" aria-label="Decision table"></div>
         <div id="rule-table-panel" class="panel"></div>
         <details class="panel rule-column-panel"><summary>Input columns <span id="column-count"></span></summary><p>Register a customer input here to use it in conditions and the quote form.</p><div id="rule-columns"></div><button id="add-rule-column" class="secondary" type="button">Add input column</button></details>
@@ -60,6 +61,7 @@
   <dialog id="rule-editor"><form id="rule-editor-form"><div class="dialog-head"><h2 id="rule-editor-title">Edit rule</h2><button id="close-rule-editor" class="icon-button" type="button" aria-label="Close rule editor">×</button></div><div id="rule-editor-fields" class="dialog-fields"></div><p id="rule-editor-error" role="alert"></p><div class="dialog-actions"><button id="cancel-rule-editor" class="secondary" type="button">Cancel</button><button class="primary" type="submit">Keep changes</button></div></form></dialog>
   <div id="toast" role="status" aria-live="polite"></div>
   <script src="/app.js"></script>
+  <script src="/voice.js"></script>
   <script src="/rules.js"></script>
   <script src="/cpq.js"></script>
   <script src="/assistant.js"></script>

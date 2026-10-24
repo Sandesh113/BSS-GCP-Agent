@@ -13,7 +13,10 @@ function outcomeText(kind,outcome){
   const show=v=>typeof v==='object'?columnById(v.column)?.label||v.column:`£${v}`;
   return `${show(outcome.monthlyPrice)} / month · ${show(outcome.setupPrice)} setup`;
 }
-function conditionText(c){return `${columnById(c.column)?.label||c.column} ${operatorLabels[c.operator]} ${c.valueFrom?columnById(c.valueFrom)?.label||c.valueFrom:Array.isArray(c.value)?c.value.join(', '):String(c.value)}`}
+function conditionText(c,extraColumns=[]){
+  const label=id=>(columnById(id)||extraColumns.find(x=>x.id===id))?.label||id;
+  return `${label(c.column)} ${operatorLabels[c.operator]} ${c.valueFrom?label(c.valueFrom):Array.isArray(c.value)?c.value.join(', '):String(c.value)}`;
+}
 async function loadBusinessRules(){
   const response=await fetch('/api/rules');
   if(!response.ok)throw new Error('Could not load business rules');
@@ -121,5 +124,40 @@ $('#close-rule-editor').onclick=$('#cancel-rule-editor').onclick=()=>$('#rule-ed
 $('#save-rules').onclick=async()=>{
   try{const response=await fetch('/api/rules',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(businessRules)});const result=await response.json();if(!response.ok)throw new Error(result.error||'Could not save rules');businessRules=result;renderBusinessRules();toast('Rules saved. The next quote uses this version.')}catch(error){toast(error.message)}
 };
+let ruleProposal=null;
+function showRuleProposal(data){
+  const review=$('#rule-assistant-review');
+  if(data.preview.clarification){ruleProposal=null;review.innerHTML=`<h3>Gemini needs one more detail</h3><p>${esc(data.preview.clarification)}</p>`;review.classList.remove('hidden');return}
+  ruleProposal=data.preview;const p=ruleProposal,row=p.row;
+  review.innerHTML=`<h3>${esc(p.tableName)} · new row ${esc(row.id)}</h3>${p.summary?`<p>${esc(p.summary)}</p>`:''}<ul>`+
+    `<li>When: ${row.conditions.length?row.conditions.map(c=>esc(conditionText(c,p.newColumns))).join(' and '):'always'}</li>`+
+    `<li>Then: ${esc(outcomeText(p.table,row.outcome))}</li><li>Priority ${row.priority}${row.effectiveFrom||row.effectiveTo?` · effective ${esc(row.effectiveFrom||'any start')} to ${esc(row.effectiveTo||'no end')}`:''}</li>`+
+    p.newColumns.map(c=>`<li>New customer input column: ${esc(c.label)} (${esc(c.id)}, ${esc(c.type)})</li>`).join('')+
+    p.warnings.map(w=>`<li class="rule-review-warning">${esc(w)}</li>`).join('')+
+    `</ul><div class="rule-review-actions"><button type="button" class="primary" id="rule-proposal-add">Add to editor</button><button type="button" class="secondary" id="rule-proposal-discard">Discard</button></div>`;
+  review.classList.remove('hidden');
+  $('#rule-proposal-add').onclick=()=>{
+    // Merge into the page's copy so unsaved manual edits survive; Save rules validates the whole table again.
+    for(const column of ruleProposal.newColumns)if(!columnById(column.id))businessRules.columns.push(column);
+    const table=ruleTable(ruleProposal.table),added={...ruleProposal.row};
+    while(table.rows.some(r=>r.id===added.id))added.id+='-new';
+    table.rows.push(added);activeRuleKind=ruleProposal.table;
+    review.classList.add('hidden');ruleProposal=null;$('#rule-assistant-text').value='';
+    renderBusinessRules();toast('Rule added to the editor. Review it, then Save rules.');
+  };
+  $('#rule-proposal-discard').onclick=()=>{review.classList.add('hidden');ruleProposal=null};
+}
+$('#rule-assistant-form').onsubmit=async event=>{
+  event.preventDefault();$('#rule-assistant-error').textContent='';
+  const button=$('#rule-assistant-send');button.disabled=true;button.textContent='Drafting…';
+  try{
+    const response=await fetch('/api/rules/assistant/propose',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:$('#rule-assistant-text').value,version:businessRules.version})});
+    const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not draft the rule');
+    showRuleProposal(data);
+  }catch(error){$('#rule-assistant-error').textContent=error.message}
+  finally{button.disabled=false;button.textContent='Draft rule'}
+};
+window.attachVoiceInput({button:$('#rule-assistant-mic'),note:$('#rule-assistant-note'),target:$('#rule-assistant-text'),
+  onRecording:recording=>{$('#rule-assistant-send').disabled=recording}});
 window.businessRulesReady=loadBusinessRules();
 window.businessRulesReady.catch(error=>toast(error.message));

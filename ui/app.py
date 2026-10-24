@@ -24,6 +24,7 @@ from contract_core import contract_pdf
 from email_core import DeliveryError, send_contract
 from order_core import contract_review, create_order, next_mobile_order_id, product_order_payload
 from state_store import read_json, write_json
+from rule_assistant import apply_change as apply_rule_change, propose_change as propose_rule_change
 from catalogue_assistant import (apply_patch as apply_assistant_patch, available_specifications,
                                  checked_state as checked_assistant_state, create_draft as create_assistant_draft,
                                  draft_preview, extract_patch as extract_assistant_patch,
@@ -156,7 +157,7 @@ def agent_result(request_id):
 
 @app.get("/<path:name>")
 def static_file(name):
-    if name not in ("app.js", "rules.js", "cpq.js", "assistant.js", "style.css", "assistant.css"):
+    if name not in ("app.js", "rules.js", "cpq.js", "assistant.js", "voice.js", "style.css", "assistant.css"):
         return jsonify(error="not found"), 404
     return send_from_directory(HERE, name)
 
@@ -328,6 +329,27 @@ def save_rules():
         return jsonify(candidate)
     except (RuleError, ValueError, TypeError) as exc:
         return jsonify(error=str(exc)), 400
+
+
+@app.post("/api/rules/assistant/propose")
+def propose_rule():
+    """Gemini drafts one row; it is returned for review and saved only through PUT /api/rules."""
+    try:
+        body = request.get_json(force=True)
+        if not isinstance(body, dict) or not isinstance(body.get("message"), str) or not body["message"].strip() or len(body["message"]) > 1000:
+            raise RuleError("Describe the rule in up to 1,000 characters")
+        rules = current_rules()
+        if body.get("version") != rules["version"]:
+            return jsonify(error="Rules changed since this page loaded. Reload before editing."), 409
+        offerings = [o for o in current_catalogue()["productOfferings"] if o["lifecycleStatus"] != "Retired"]
+        change = propose_rule_change(body["message"], rules, offerings)
+        candidate, preview = apply_rule_change(rules, change)
+        return jsonify(candidate=candidate, preview=preview)
+    except RuleError as exc:
+        return jsonify(error=f"The proposed rule is not valid: {exc}"), 400
+    except Exception:
+        app.logger.exception("Rule assistant model request failed")
+        return jsonify(error="Gemini could not read that rule. Please rephrase it or add the row manually."), 502
 
 
 @app.get("/api/catalogue")
