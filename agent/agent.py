@@ -59,7 +59,22 @@ class QuoteAgent:
         content = response.content
         if isinstance(content, list):
             content = "".join(part.get("text", "") for part in content if isinstance(part, dict))
-        return json.loads(content)
+        return parse_proposal(content)
+
+
+def parse_proposal(content: str) -> dict:
+    """Never raise: an exception here becomes HTTP 500, which Pub/Sub would retry indefinitely.
+    An empty selection is rejected by the deterministic validator instead."""
+    text = content.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[-1].rsplit("```", 1)[0]
+    try:
+        proposal = json.loads(text)
+    except ValueError:
+        proposal = None
+    if not isinstance(proposal, dict):
+        return {"productOfferingIds": [], "reason": "Model output was not a JSON object"}
+    return proposal
 
 
 root_agent = QuoteAgent()

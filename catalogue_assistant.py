@@ -154,10 +154,23 @@ def transcribe_audio(audio, mime_type):
     return transcript
 
 
+def _allowance(value):
+    """Read a numeric string such as "2" as a number; checked_state still enforces the range."""
+    if not isinstance(value, str):
+        return value
+    try:
+        number = float(value.strip())
+    except ValueError:
+        raise ValidationError("Allowance must be a positive number") from None
+    return int(number) if number.is_integer() else number
+
+
 def apply_patch(state, patch, catalogue):
     if not isinstance(patch, dict):
         raise ValidationError("Could not read that answer")
     updated = copy.deepcopy(state)
+    # The model is told to omit unstated fields; treat an explicit null the same way.
+    patch = {key: value for key, value in patch.items() if value is not None}
     if "name" in patch:
         updated["name"] = patch["name"]
     specs = {row["id"] for row in available_specifications(catalogue)}
@@ -170,7 +183,7 @@ def apply_patch(state, patch, catalogue):
         if not isinstance(choice, dict) or not isinstance(choice.get("include"), bool):
             raise ValidationError("Could not read that specification choice")
         updated["allowances"][key] = {"include": choice["include"],
-                                       "value": choice.get("value") if choice["include"] else None}
+                                       "value": _allowance(choice.get("value")) if choice["include"] else None}
     for key in ("monthlyPrice", "setupPrice", "segments"):
         if key in patch:
             updated[key] = patch[key]

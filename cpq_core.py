@@ -2,7 +2,7 @@
 import copy
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 
@@ -12,6 +12,7 @@ from customer_core import validate_customer
 from product_constraints import ProductConstraintError, evaluate_constraints
 
 POLICY_PATH = Path(__file__).with_name("cpq_policy.json")
+QUOTE_VALIDITY_DAYS = 30
 
 
 def _ids(values, subject):
@@ -153,7 +154,10 @@ def configure_quote(customer, selections, promotion_id=None, *, catalogue=None, 
                             "itemPrice": [{"priceType": "recurring", "price": _amount(recurring)}, {"priceType": "oneTime", "price": _amount(setup)}]})
         rule_decisions.extend({"productOfferingId": oid, **step} for step in decision["trace"])
     quote_id = "quote-" + uuid.uuid4().hex[:12]
-    quote = {"id": quote_id, "@type": "Quote", "state": "pendingApproval" if approval else "draft", "quoteDate": when.isoformat(),
+    # TMF648 QuoteStateType has no "draft"; a priced quote awaiting a human is "pending".
+    quote = {"id": quote_id, "@type": "Quote", "state": "pending" if approval else "approved", "quoteDate": when.isoformat(),
+             "validFor": {"startDateTime": when.isoformat(),
+                          "endDateTime": (when + timedelta(days=QUOTE_VALIDITY_DAYS)).isoformat()},
              "relatedParty": [{"id": customer["id"], "role": "customer"}], "quoteItem": quote_items,
              "quoteTotalPrice": [{"priceType": "recurring", "price": _amount(monthly_total)}, {"priceType": "oneTime", "price": _amount(setup_total)}],
              "note": [{"text": "Illustrative pre-tax quote. Commitment estimate assumes unchanged monthly charges for selected terms."}]}

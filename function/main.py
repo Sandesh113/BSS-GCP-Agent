@@ -17,8 +17,8 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
 
-from bss_core import CATALOGUE, ValidationError, build_result, validate_request
-from business_rules import load_rules, validate_rules
+from bss_core import CATALOGUE, ValidationError, build_result, validate_catalogue, validate_request
+from business_rules import RuleError, load_rules, validate_rules
 
 
 logging.basicConfig(level=logging.INFO)
@@ -53,8 +53,24 @@ def current_configuration():
     return catalogue, rules
 
 
-def call_agent(request: dict) -> dict:
-    catalogue, _ = current_configuration()
+def agent_catalogue(catalogue: dict) -> dict:
+    """What the model may choose from: Active offers and their specifications, without CFS design."""
+    offers = [offer for offer in catalogue["productOfferings"] if offer["lifecycleStatus"] == "Active"]
+    specs = {spec["id"]: spec for spec in catalogue["productSpecifications"]}
+    used = set()
+    for offer in offers:
+        bundle = specs[offer["productSpecification"]["id"]]
+        used.add(bundle["id"])
+        used.update(ref["id"] for ref in bundle["bundledProductSpecification"])
+    return {"version": catalogue["version"], "currency": catalogue["currency"], "productOfferings": offers,
+            "productSpecifications": [{k: v for k, v in spec.items() if k != "serviceSpecificationIds"}
+                                      for spec in catalogue["productSpecifications"] if spec["id"] in used]}
+
+
+def call_agent(request: dict, catalogue: dict | None = None) -> dict:
+    if catalogue is None:
+        catalogue, _ = current_configuration()
+    catalogue = agent_catalogue(catalogue)
     credentials, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
     session = AuthorizedSession(credentials)
     url = f"https://{REGION}-aiplatform.googleapis.com/v1/{AGENT_RESOURCE}:query"
@@ -77,7 +93,9 @@ def process(request: dict) -> dict:
     with TRACER.start_as_current_span("quote.process") as span:
         span.set_attribute("request.id", request["requestId"])
         catalogue, rules = current_configuration()
-        proposal = call_agent(request)
+        # One read per request, so the model and the validator see the same catalogue version.
+        validate_catalogue(catalogue, allow_drafts=True)
+        proposal = call_agent(request, catalogue)
         return build_result(request, proposal, catalogue, rules)
 
 
@@ -92,19 +110,23 @@ def handle_request(cloud_event):
     request_id = request.get("requestId") if isinstance(request, dict) else None
     if not isinstance(request_id, str) or not request_id:
         request_id = f"invalid-{cloud_event['id']}"
-    try:
-        result = process(request)
-    except ValidationError as exc:
-        result = {"requestId": request_id, "status": "REJECTED", "error": str(exc)}
-
     key = hashlib.sha256(request_id.encode("utf-8")).hexdigest()
     object_name = f"results/{key}.json"
     bucket = storage.Client(project=PROJECT_ID).bucket(RESULT_BUCKET)
     blob = bucket.blob(object_name)
-    try:
-        blob.upload_from_string(json.dumps(result), content_type="application/json", if_generation_match=0)
-    except PreconditionFailed:
+    if blob.exists():
+        # Pub/Sub redelivery: reuse the stored decision instead of paying for another model call.
         result = json.loads(blob.download_as_text())
+    else:
+        try:
+            result = process(request)
+        except (ValidationError, RuleError) as exc:
+            # Deterministic failures; raising would make RETRY_POLICY_RETRY redeliver them indefinitely.
+            result = {"requestId": request_id, "status": "REJECTED", "error": str(exc)}
+        try:
+            blob.upload_from_string(json.dumps(result), content_type="application/json", if_generation_match=0)
+        except PreconditionFailed:
+            result = json.loads(blob.download_as_text())
     event = {"requestId": request_id, "status": result["status"], "resultUri": f"gs://{RESULT_BUCKET}/{object_name}"}
     pubsub_v1.PublisherClient().publish(STATUS_TOPIC, json.dumps(event).encode("utf-8")).result(timeout=30)
     logging.info("Processed request %s with status %s", request_id, result["status"])

@@ -12,7 +12,9 @@ import requests
 from contract_core import contract_pdf
 
 
-EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+# One plain mailbox: list separators, brackets and quotes would let a header name extra recipients.
+EMAIL_PATTERN = re.compile(r'^[^\s@,;:<>()\[\]"\\]+@[^\s@,;:<>()\[\]"\\]+\.[^\s@,;:<>()\[\]"\\]+$')
+RESERVED_DOMAINS = ("example.com", "example.net", "example.org")  # RFC 2606
 
 
 class DeliveryError(ValueError):
@@ -27,7 +29,8 @@ def _recipients(primary_email, copy_email):
     for address in requested:
         recipients_by_key.setdefault(address.strip().lower(), address.strip())
     recipients = list(recipients_by_key.values())
-    if any(address.lower().endswith("@example.com") for address in recipients):
+    domains = [address.rsplit("@", 1)[1].lower() for address in recipients]
+    if any(domain == reserved or domain.endswith("." + reserved) for domain in domains for reserved in RESERVED_DOMAINS):
         raise DeliveryError("Replace the fictional example.com address before sending")
     return recipients
 

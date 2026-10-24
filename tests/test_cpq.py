@@ -36,7 +36,7 @@ def test_uk_customers_are_synthetic_and_essential_fields_are_checked():
 def test_two_compatible_products_have_separate_terms_and_item_prices():
     result = configure_quote(CUSTOMER, [MINI, SMS])
     assert result["status"] == "VALIDATED"
-    assert result["quote"]["state"] == "draft"
+    assert result["quote"]["state"] == "approved"
     assert [item["productOffering"]["id"] for item in result["quote"]["quoteItem"]] == ["po-mobile-mini", "po-sms-extra"]
     assert monthly(result) == "14.50"
     assert result["commitmentEstimate"] == "174.00"

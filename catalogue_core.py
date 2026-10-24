@@ -22,7 +22,7 @@ def money(value):
     except (InvalidOperation, TypeError) as exc:
         raise ValidationError("invalid price") from exc
     if not n.is_finite() or n < 0 or n > 1000000:
-        raise ValidationError("price must be nonnegative")
+        raise ValidationError("price must be between 0 and 1,000,000")
     return str(n.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
 
@@ -63,6 +63,9 @@ def validate_catalogue(catalogue, allow_drafts=False):
             raise ValidationError(f"{spec['id']} needs characteristic, unit and CFS references")
         if len(refs) != len(set(refs)) or any(r not in services for r in refs):
             raise ValidationError(f"{spec['id']} has duplicate or unknown CFS references")
+        # The allowance value is passed to the CFS unchanged, so 1 TB must never reach a GB service.
+        if any(services[r]["unit"] != spec["unit"] for r in refs):
+            raise ValidationError(f"{spec['id']} unit must match the unit of its mapped CFS")
     for offer in offers.values():
         if offer.get("lifecycleStatus") not in ("Draft", "Active", "Retired"):
             raise ValidationError(f"{offer['id']} has invalid lifecycle status")
@@ -179,7 +182,7 @@ def build_result(request, proposal, catalogue=None, rules=None, *, policy=None, 
                             "itemPrice": [{"priceType": "recurring", "price": _amount(monthly_price)},
                                           {"priceType": "oneTime", "price": _amount(setup_price)}]})
     request_id, stamp = request["requestId"], decision_time.isoformat()
-    quote = {"id": f"quote-{request_id}", "@type": "Quote", "state": "pendingApproval" if approval else "approved",
+    quote = {"id": f"quote-{request_id}", "@type": "Quote", "state": "pending" if approval else "approved",
              "externalId": request_id, "quoteDate": stamp, "relatedParty": [{"id": request["customerId"], "role": "customer"}],
              "quoteItem": quote_items,
              "quoteTotalPrice": [{"priceType": "recurring", "price": _amount(monthly)}, {"priceType": "oneTime", "price": _amount(setup)}],

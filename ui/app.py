@@ -17,7 +17,7 @@ from flask import Flask, jsonify, request, send_file, send_from_directory
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from catalogue_core import DEFAULT_CATALOGUE, ValidationError, build_result, transition_offering, validate_catalogue, validate_request
-from business_rules import RuleError, load_rules, validate_rules
+from business_rules import RuleError, instant, load_rules, validate_rules
 from cpq_core import available_terms, configure_quote, load_policy
 from customer_core import CustomerError, load_customers, validate_customer
 from contract_core import contract_pdf
@@ -71,10 +71,26 @@ def _quote_record(quote_id):
         raise ValidationError("Validated quote not found")
     if record["result"]["status"] != "VALIDATED":
         raise ValidationError("Quote needs human approval before order submission")
+    # Quotes saved before validFor existed keep their previous behaviour.
+    valid_for = record["result"]["quote"].get("validFor")
+    if valid_for and datetime.now(timezone.utc) >= instant(valid_for["endDateTime"]):
+        raise ValidationError("Quote has expired; validate the quote again")
     if (record["catalogue"] != current_catalogue() or record["rules"] != current_rules()
             or record["policy"] != load_policy()):
         raise ValidationError("Catalogue or pricing policy changed; validate the quote again")
     return record
+
+
+def tmf_error(status, message):
+    """TMF630 Error resource; "error" stays for the existing UI scripts."""
+    reasons = {400: "Bad Request", 404: "Not Found", 409: "Conflict"}
+    return jsonify({"@type": "Error", "code": str(status), "reason": reasons[status], "message": message,
+                    "status": str(status), "error": message}), status
+
+
+# The commercial UI renders these fields; snapshots and the CFS service order stay in the bucket.
+PUBLIC_RESULT_FIELDS = ("requestId", "status", "error", "catalogueVersion", "rulesVersion", "quote",
+                        "ruleDecisions", "approval")
 
 
 def commercial_view(catalogue):
@@ -135,7 +151,7 @@ def agent_result(request_id):
         result = json.loads(blob.download_as_text())
     except NotFound:
         return jsonify(requestId=request_id, status="PROCESSING"), 202
-    return jsonify(result)
+    return jsonify({key: result[key] for key in PUBLIC_RESULT_FIELDS if key in result})
 
 
 @app.get("/<path:name>")
@@ -250,13 +266,13 @@ def submit_product_order():
             _write_store(ORDER_DRAFT, orders)
         return jsonify(created["productOrder"]), 201, {"Location": created["productOrder"]["href"]}
     except (ValidationError, RuleError, ValueError, TypeError) as exc:
-        return jsonify(error=str(exc)), 400
+        return tmf_error(400, str(exc))
 
 
 @app.get("/tmf-api/productOrderingManagement/v5/productOrder/<order_id>")
 def get_product_order(order_id):
     record = _read_store(ORDER_DRAFT).get(order_id)
-    return (jsonify(record["productOrder"]), 200) if record else (jsonify(error="Order not found"), 404)
+    return (jsonify(record["productOrder"]), 200) if record else tmf_error(404, "Order not found")
 
 
 @app.get("/api/cpq/orders/<order_id>")
@@ -393,6 +409,10 @@ def save_catalogue():
             current = current_catalogue()
             if not isinstance(candidate, dict) or candidate.get("version") != current["version"]:
                 return jsonify(error="Catalogue changed since this page loaded. Reload before editing."), 409
+            for key in ("productSpecifications", "productOfferings"):
+                rows = candidate.get(key)
+                if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
+                    raise ValidationError(f"{key} must be a list of objects")
             existing = {row["id"]: row["lifecycleStatus"] for row in current["productOfferings"]}
             candidate_ids = {row.get("id") for row in candidate.get("productOfferings", []) if isinstance(row, dict)}
             if any(status != "Draft" and oid not in candidate_ids for oid, status in existing.items()):

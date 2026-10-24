@@ -14,6 +14,8 @@ The pytest suite additionally exercises the catalogue and CPQ HTTP endpoints: a 
 
 The order tests cover TMF622-style payload construction from a stored validated quote, PS-to-CFS actions, idempotent submission, rejection of tampered or stale payloads, blocking pending approvals, PDF generation, fictional-address rejection and SMTP delivery with a fake client. These tests do not assert TM Forum CTK conformance or UK legal contract compliance.
 
+The expert review of 24 October 2026 added 41 cases (`tests/test_expert_review.py`) and fixed 14 defects; see [TEST_PLAN.md](TEST_PLAN.md) for the case list, faults and remaining recommendations.
+
 ## Findings from this pass
 
 1. A composite allowance of `NaN` or infinity passed catalogue validation. The validator now requires a finite positive number, and regression cases cover it.

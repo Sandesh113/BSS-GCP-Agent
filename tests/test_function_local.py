@@ -11,6 +11,9 @@ class FakeBlob:
         self.objects = objects
         self.name = name
 
+    def exists(self):
+        return self.name in self.objects
+
     def upload_from_string(self, body, **kwargs):
         if self.name in self.objects:
             raise fn.PreconditionFailed("result already exists")
@@ -65,7 +68,7 @@ def test_cloud_event_persists_decomposed_result_and_emits_status(monkeypatch):
     monkeypatch.setattr(fn.pubsub_v1, "PublisherClient", lambda: FakePublisher(events))
     monkeypatch.setattr(fn, "RESULT_BUCKET", "test-results")
     monkeypatch.setattr(fn, "STATUS_TOPIC", "test-status")
-    monkeypatch.setattr(fn, "call_agent", lambda request: {"productOfferingIds": ["po-mobile-mini"]})
+    monkeypatch.setattr(fn, "call_agent", lambda request, *_: {"productOfferingIds": ["po-mobile-mini"]})
     fn.handle_request(FakeEvent({"requestId": "cloud-local-mini", "customerId": "customer-1",
                                  "segment": "consumer", "text": "Mobile Mini"}))
     assert len(storage.objects) == len(events) == 1
@@ -82,7 +85,7 @@ def test_cloud_event_rejects_invalid_request_before_agent_call(monkeypatch):
     events = []
     monkeypatch.setattr(fn.storage, "Client", lambda **kwargs: storage)
     monkeypatch.setattr(fn.pubsub_v1, "PublisherClient", lambda: FakePublisher(events))
-    monkeypatch.setattr(fn, "call_agent", lambda request: (_ for _ in ()).throw(AssertionError("agent called")))
+    monkeypatch.setattr(fn, "call_agent", lambda request, *_: (_ for _ in ()).throw(AssertionError("agent called")))
     fn.handle_request(FakeEvent({"requestId": "cloud-invalid", "customerId": "customer-1",
                                  "segment": "consumer", "text": ""}))
     assert next(iter(storage.objects.values()))["status"] == "REJECTED"
@@ -96,7 +99,7 @@ def test_duplicate_pubsub_delivery_keeps_first_result(monkeypatch):
     monkeypatch.setattr(fn.pubsub_v1, "PublisherClient", lambda: FakePublisher(events))
     proposals = iter([{"productOfferingIds": ["po-mobile-mini"]},
                       {"productOfferingIds": ["po-mobile-plus"]}])
-    monkeypatch.setattr(fn, "call_agent", lambda request: next(proposals))
+    monkeypatch.setattr(fn, "call_agent", lambda request, *_: next(proposals))
     event = FakeEvent({"requestId": "cloud-duplicate", "customerId": "customer-1",
                        "segment": "consumer", "text": "Mobile Mini"})
     fn.handle_request(event)
