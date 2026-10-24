@@ -1,0 +1,26 @@
+.hidden{display:none!important}
+.catalogue-actions{display:flex;gap:10px;align-items:center}
+.catalogue-actions button{white-space:nowrap}
+.assistant-dialog{width:min(740px,calc(100% - 24px));max-height:min(820px,calc(100vh - 30px));padding:25px}
+.assistant-dialog .dialog-head{margin-bottom:14px}
+.assistant-subtitle{color:#7889a4;font-size:12px;line-height:1.5;margin-top:6px}
+.assistant-thread{height:min(350px,43vh);overflow:auto;background:#f7f9fe;border:1px solid #e0e8f5;border-radius:12px;padding:17px;display:flex;flex-direction:column;gap:12px}
+.assistant-bubble{max-width:85%;padding:11px 14px;border-radius:12px;line-height:1.5;white-space:pre-wrap}
+.assistant-bubble.assistant{align-self:flex-start;background:#fff;border:1px solid #dce6f5;color:#32445f}
+.assistant-bubble.manager{align-self:flex-end;background:#e8efff;color:#1f438f}
+.assistant-form{margin-top:18px}
+.assistant-form label{display:block;font-weight:800;color:#4b5f7b;font-size:12px;margin-bottom:7px}
+.assistant-input-row{display:flex;gap:9px;align-items:stretch}
+.assistant-input-row textarea{flex:1;resize:vertical;min-height:69px;border:1px solid #dce4ef;border-radius:9px;padding:11px;outline:none}
+.assistant-input-row textarea:focus{border-color:#7d9af0;box-shadow:0 0 0 3px #e9efff}
+.assistant-input-row button{font-size:20px}
+.assistant-input-row button.recording{color:#aa293c;border-color:#efb8c1;background:#fff0f2}
+.assistant-form-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px}
+.assistant-form-actions span{font-size:11px;color:#8c9ab0;line-height:1.4}
+.assistant-review{margin-top:14px;border:1px solid #cbdcf8;background:#f1f6ff;border-radius:11px;padding:15px}
+.assistant-review h3{font:800 15px Manrope;margin:0 0 9px}
+.assistant-review p{color:#40567b;font-size:12px;line-height:1.5;margin-top:5px}
+.assistant-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:13px}
+.assistant-footer p{color:#a72b3a;font-size:12px}
+.assistant-dialog button:disabled{opacity:.55;cursor:wait}
+@media(max-width:760px){.catalogue-actions{margin-top:17px;flex-wrap:wrap}.assistant-form-actions{align-items:flex-start;flex-direction:column}.assistant-thread{height:36vh}}

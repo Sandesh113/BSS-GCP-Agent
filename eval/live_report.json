@@ -1,0 +1,95 @@
+{
+  "model": "gemini-3.5-flash",
+  "agentResource": "projects/bss-ai-agent-20261021-sandesh/locations/europe-west2/reasoningEngines/1789925765182128128",
+  "exactMatchRate": 1.0,
+  "guardrailMatchRate": 1.0,
+  "validRate": 0.8333333333333334,
+  "cases": [
+    {
+      "caseId": "eval-mini-explicit",
+      "expected": [
+        "po-mobile-mini"
+      ],
+      "predicted": [
+        "po-mobile-mini"
+      ],
+      "exactMatch": true,
+      "valid": true,
+      "expectedValid": true,
+      "guardrailMatch": true,
+      "status": "VALIDATED"
+    },
+    {
+      "caseId": "eval-mini-needs",
+      "expected": [
+        "po-mobile-mini"
+      ],
+      "predicted": [
+        "po-mobile-mini"
+      ],
+      "exactMatch": true,
+      "valid": true,
+      "expectedValid": true,
+      "guardrailMatch": true,
+      "status": "VALIDATED"
+    },
+    {
+      "caseId": "eval-plus-explicit",
+      "expected": [
+        "po-mobile-plus"
+      ],
+      "predicted": [
+        "po-mobile-plus"
+      ],
+      "exactMatch": true,
+      "valid": true,
+      "expectedValid": true,
+      "guardrailMatch": true,
+      "status": "VALIDATED"
+    },
+    {
+      "caseId": "eval-plus-needs",
+      "expected": [
+        "po-mobile-plus"
+      ],
+      "predicted": [
+        "po-mobile-plus"
+      ],
+      "exactMatch": true,
+      "valid": true,
+      "expectedValid": true,
+      "guardrailMatch": true,
+      "status": "VALIDATED"
+    },
+    {
+      "caseId": "eval-sms-explicit",
+      "expected": [
+        "po-sms-extra"
+      ],
+      "predicted": [
+        "po-sms-extra"
+      ],
+      "exactMatch": true,
+      "valid": false,
+      "expectedValid": false,
+      "guardrailMatch": true,
+      "status": "INVALID"
+    },
+    {
+      "caseId": "eval-mini-and-extra",
+      "expected": [
+        "po-mobile-mini",
+        "po-sms-extra"
+      ],
+      "predicted": [
+        "po-mobile-mini",
+        "po-sms-extra"
+      ],
+      "exactMatch": true,
+      "valid": true,
+      "expectedValid": true,
+      "guardrailMatch": true,
+      "status": "VALIDATED"
+    }
+  ]
+}

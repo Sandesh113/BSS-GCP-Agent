@@ -1,0 +1,191 @@
+{
+  "@type": "ProductOrder",
+  "category": "POC mobile order",
+  "description": "Illustrative order request from a validated CPQ quote; no network activation",
+  "externalId": [
+    {
+      "id": "quote-0b41ff3f290d",
+      "owner": "BSS Agent POC",
+      "@type": "ExternalIdentifier"
+    }
+  ],
+  "quote": [
+    {
+      "id": "quote-0b41ff3f290d",
+      "@type": "QuoteRef"
+    }
+  ],
+  "relatedParty": [
+    {
+      "role": "Customer",
+      "@type": "RelatedPartyRefOrPartyRoleRef",
+      "partyOrPartyRole": {
+        "id": "customer-demo-jason",
+        "name": "Jason Smith",
+        "@type": "PartyRoleRef",
+        "@referredType": "Customer"
+      }
+    }
+  ],
+  "productOrderItem": [
+    {
+      "id": "1",
+      "@type": "ProductOrderItem",
+      "action": "add",
+      "state": "acknowledged",
+      "quantity": 1,
+      "productOffering": {
+        "id": "po-mobile-mini",
+        "name": "Mobile Mini",
+        "@type": "ProductOfferingRef"
+      },
+      "product": {
+        "@type": "Product",
+        "productSpecification": {
+          "id": "ps-mobile-mini",
+          "@type": "ProductSpecificationRef"
+        },
+        "productCharacteristic": [
+          {
+            "name": "voiceMinutes",
+            "value": 100,
+            "@type": "NumberCharacteristic"
+          },
+          {
+            "name": "dataGb",
+            "value": 2,
+            "@type": "NumberCharacteristic"
+          },
+          {
+            "name": "smsCount",
+            "value": 100,
+            "@type": "NumberCharacteristic"
+          }
+        ]
+      },
+      "itemTerm": [
+        {
+          "@type": "OrderTerm",
+          "duration": {
+            "amount": 12,
+            "units": "month"
+          }
+        }
+      ],
+      "itemPrice": [
+        {
+          "@type": "OrderPrice",
+          "priceType": "recurring",
+          "price": {
+            "dutyFreeAmount": {
+              "value": "12.00",
+              "unit": "GBP"
+            },
+            "@type": "Price"
+          },
+          "recurringChargePeriod": "month"
+        },
+        {
+          "@type": "OrderPrice",
+          "priceType": "oneTime",
+          "price": {
+            "dutyFreeAmount": {
+              "value": "0.00",
+              "unit": "GBP"
+            },
+            "@type": "Price"
+          }
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "@type": "ProductOrderItem",
+      "action": "add",
+      "state": "acknowledged",
+      "quantity": 1,
+      "productOffering": {
+        "id": "po-sms-extra",
+        "name": "Extra SMS",
+        "@type": "ProductOfferingRef"
+      },
+      "product": {
+        "@type": "Product",
+        "productSpecification": {
+          "id": "ps-sms-extra",
+          "@type": "ProductSpecificationRef"
+        },
+        "productCharacteristic": [
+          {
+            "name": "smsCount",
+            "value": 1000,
+            "@type": "NumberCharacteristic"
+          }
+        ]
+      },
+      "itemTerm": [
+        {
+          "@type": "OrderTerm",
+          "duration": {
+            "amount": 12,
+            "units": "month"
+          }
+        }
+      ],
+      "itemPrice": [
+        {
+          "@type": "OrderPrice",
+          "priceType": "recurring",
+          "price": {
+            "dutyFreeAmount": {
+              "value": "2.50",
+              "unit": "GBP"
+            },
+            "@type": "Price"
+          },
+          "recurringChargePeriod": "month"
+        },
+        {
+          "@type": "OrderPrice",
+          "priceType": "oneTime",
+          "price": {
+            "dutyFreeAmount": {
+              "value": "0.00",
+              "unit": "GBP"
+            },
+            "@type": "Price"
+          }
+        }
+      ]
+    }
+  ],
+  "orderTotalPrice": [
+    {
+      "@type": "OrderPrice",
+      "priceType": "recurring",
+      "price": {
+        "dutyFreeAmount": {
+          "value": "14.50",
+          "unit": "GBP"
+        },
+        "@type": "Price"
+      },
+      "recurringChargePeriod": "month"
+    },
+    {
+      "@type": "OrderPrice",
+      "priceType": "oneTime",
+      "price": {
+        "dutyFreeAmount": {
+          "value": "0.00",
+          "unit": "GBP"
+        },
+        "@type": "Price"
+      }
+    }
+  ],
+  "id": "order-demo-jason",
+  "href": "/tmf-api/productOrderingManagement/v5/productOrder/order-demo-jason",
+  "state": "acknowledged",
+  "creationDate": "2026-10-24T14:45:00.643344+00:00"
+}

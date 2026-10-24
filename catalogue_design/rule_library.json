@@ -1,0 +1,146 @@
+{
+  "version": "2026-10-24.1",
+  "status": "Proposed reference design",
+  "executionStatus": "Definitions and examples only; not connected to the current quote runtime",
+  "ruleRecordContract": {
+    "requiredAtPublication": ["id", "version", "owner", "phase", "subjectBinding", "parameters", "effectivePeriod", "cohort", "priority", "unknownOutcome", "failureOutcome", "sourceIds", "approvalRecord"],
+    "outcomes": ["pass", "block", "needsInformation", "needsApproval", "warn", "suggest", "derive", "schedule"],
+    "missingEvidence": "needsInformation; never assume an eligibility or feasibility check passed",
+    "conflictPolicy": "Block incompatible requirements or multiple prices at the same priority; do not silently use last write wins",
+    "overridePolicy": "An offer can narrow a PS range and add requirements. Widening a PS/CFSS constraint requires an approved new compatible version. Hard technical, ownership and regulatory constraints cannot be waived by a discount approval."
+  },
+  "families": [
+    {
+      "id":"CAT","name":"Structure and product relationships","owner":"Product design","phase":["design","configure"],"sourceIds":["S-TMF620","S-TMF760","S-SF"],
+      "rules":[
+        {"id":"CAT-01","name":"One root specification","check":"A simple sellable offering references exactly one root PS; a bundle-of-offers uses a separate explicit pattern.","parameters":["offeringPattern","rootSpecificationId"],"failureOutcome":"block"},
+        {"id":"CAT-02","name":"Valid composition graph","check":"Child references resolve to pinned versions and composition contains no self-reference or cycles.","parameters":["children","versions"],"failureOutcome":"block"},
+        {"id":"CAT-03","name":"Mandatory primary line","check":"The configured subscription has exactly one primary Mobile Line; secondary identities use a separate configured limit.","parameters":["primaryLineCount","maximumSecondaryLines"],"failureOutcome":"block"},
+        {"id":"CAT-04","name":"Option and characteristic cardinality","check":"Selected quantities and characteristic counts meet their min/max/default and choice-group limits.","parameters":["min","max","default","choiceGroup"],"failureOutcome":"block"},
+        {"id":"CAT-05","name":"Required capability","check":"A selected component's required capability exists in the order or verified inventory; a voice capability does not imply a purchased UK-minutes bundle.","parameters":["requiredCapability","inventoryEvidence"],"failureOutcome":"block"},
+        {"id":"CAT-06","name":"Exclusion and recommendation","check":"Reject excluded combinations and multiple selections from a single-choice group; recommendations remain suggestions.","parameters":["excludedIds","exactlyOneGroup","recommendedIds"],"failureOutcome":"block"}
+      ]
+    },
+    {
+      "id":"ELI","name":"Commercial eligibility","owner":"Commercial qualification","phase":["discover","qualify","order"],"sourceIds":["S-TMF679","S-SF","S-LYCA"],
+      "rules":[
+        {"id":"ELI-01","name":"Sale lifecycle and date window","check":"The offer is sellable for the interaction date; expiry and retirement block a new sale without disabling an existing contracted service.","parameters":["lifecycleStatus","saleValidFor","interactionDate"],"failureOutcome":"block"},
+        {"id":"ELI-02","name":"Customer and territory eligibility","check":"Segment, residency and any age or entitlement evidence meet the selected offer's explicit criteria; no universal age threshold is assumed.","parameters":["segment","territory","requiredEvidence"],"failureOutcome":"block"},
+        {"id":"ELI-03","name":"Channel and acquisition cohort","check":"The selected web/store/partner channel and new/existing/port-in customer cohort qualify.","parameters":["channels","acquisitionCohorts","previousCustomerPolicy"],"failureOutcome":"block"},
+        {"id":"ELI-04","name":"Credit and payment qualification","check":"Run credit, arrears or payment checks only where the offer requires them; prepaid and postpaid policies can differ.","parameters":["creditPolicy","paymentMethod","arrearsPolicy"],"failureOutcome":"needsInformation"},
+        {"id":"ELI-05","name":"Existing-product prerequisite","check":"A companion benefit or multi-product discount has an eligible active parent product belonging to the correct account.","parameters":["qualifyingProductTypes","accountId","inventoryVersion"],"failureOutcome":"block"},
+        {"id":"ELI-06","name":"Qualification evidence freshness","check":"A missing, pending or expired qualification cannot be treated as qualified; return the reason and a request for evidence.","parameters":["qualificationId","expiresAt","checkedAt"],"failureOutcome":"needsInformation"}
+      ]
+    },
+    {
+      "id":"DEV","name":"Device and network compatibility","owner":"Service design","phase":["configure","technicalQualify","order"],"sourceIds":["S-TMFC009","S-VF-ONENUMBER","S-GSMA-TS43","S-EE-TERMS"],
+      "rules":[
+        {"id":"DEV-01","name":"SIM form and device support","check":"The requested physical/eSIM path is supported by the device, operator activation channel and current device matrix.","parameters":["simForm","deviceModel","activationProfile"],"failureOutcome":"block"},
+        {"id":"DEV-02","name":"Cellular companion support","check":"A watch requesting standalone cellular connectivity is a supported cellular model and can be entitled and activated.","parameters":["deviceClass","cellularCapable","entitlementResult"],"failureOutcome":"block"},
+        {"id":"DEV-03","name":"Platform and OS compatibility","check":"Device brand, OS version and primary/companion pairing meet the versioned compatibility matrix.","parameters":["compatibilityMatrixVersion","primaryDevice","companionDevice"],"failureOutcome":"block"},
+        {"id":"DEV-04","name":"Radio and coverage feasibility","check":"The access technology and required coverage are technically available; a maximum speed cap is not represented as a guaranteed speed.","parameters":["accessTechnology","coverageEvidence","speedPolicy"],"failureOutcome":"needsInformation"},
+        {"id":"DEV-05","name":"Optional feature eligibility","check":"Visual voicemail, WiFi Calling and similar feature selections meet plan, device and network prerequisites.","parameters":["feature","planEligibility","deviceEligibility"],"failureOutcome":"block"},
+        {"id":"DEV-06","name":"Companion messaging support","check":"Apply device/service-profile restrictions such as unsupported MMS or voice/SMS on a data-only companion.","parameters":["companionServiceMatrix","requestedCapabilities"],"failureOutcome":"block"}
+      ]
+    },
+    {
+      "id":"CON","name":"Commitment, renewal and timing","owner":"Commercial contract","phase":["configure","quote","activate","change"],"sourceIds":["S-TMF620","S-LEBARA-HELP","S-EE-END","S-EE-LEAVE"],
+      "rules":[
+        {"id":"CON-01","name":"Commitment and start anchor","check":"Choose an allowed commitment and explicit start event, such as activation; calculate its end from the accepted agreement.","parameters":["termOptions","durationUnit","contractStartAnchor"],"failureOutcome":"block"},
+        {"id":"CON-02","name":"Independent billing and allowance cycles","check":"Keep commitment, billing frequency and allowance validity separate; 30 days does not equal a calendar month.","parameters":["commitment","billingCycle","allowanceCycle"],"failureOutcome":"block"},
+        {"id":"CON-03","name":"Renewal consent and funds","check":"Renew only under the accepted renewal policy and payment conditions; declare the insufficient-funds outcome.","parameters":["autoRenewConsent","paymentEvidence","renewalFailureAction"],"failureOutcome":"block"},
+        {"id":"CON-04","name":"Calendar versus anniversary timing","check":"Distinguish fixed calendar price events from months-since-activation events and prevent unintended double application.","parameters":["scheduleMode","effectiveDate","anniversaryMonth","collisionPolicy"],"failureOutcome":"block"},
+        {"id":"CON-05","name":"Cancellation and notice","check":"Evaluate notice, cancellation rights, contract cohort and permitted remaining-term charges at the effective termination date.","parameters":["noticePolicy","cancellationPolicy","feePolicy","terminationDate"],"failureOutcome":"needsInformation"},
+        {"id":"CON-06","name":"End-of-commitment behavior","check":"Ending a minimum term follows the agreed rolling, renewal or termination policy and does not automatically disconnect a line.","parameters":["postTermPolicy","renewalOfferId"],"failureOutcome":"block"}
+      ]
+    },
+    {
+      "id":"PRI","name":"Price, tax and future price schedules","owner":"Pricing","phase":["design","quote","bill"],"sourceIds":["S-TMF620","S-OFCOM","S-VF-PLANS","S-LEBARA"],
+      "rules":[
+        {"id":"PRI-01","name":"Typed money and charge","check":"Every recurring, one-time or usage charge declares currency, tax basis, unit and rounding; money uses decimal arithmetic.","parameters":["priceType","currency","taxBasis","unit","rounding"],"failureOutcome":"block"},
+        {"id":"PRI-02","name":"Disclosed consumer price changes","check":"Applicable new UK consumer core-subscription schedules state exact GBP amounts and dates; exclude inflation/percentage-based scheduled increases for this cohort.","parameters":["jurisdiction","customerType","contractCohort","absolutePriceSchedule"],"failureOutcome":"block"},
+        {"id":"PRI-03","name":"Unambiguous temporal price","check":"For a given charge component exactly one applicable price wins; reject gaps, overlaps and unresolved same-priority alternatives.","parameters":["pricePeriods","dateConvention","priority"],"failureOutcome":"block"},
+        {"id":"PRI-04","name":"Proration and first/final bill","check":"Define whether a mid-cycle change is prorated, the day-count basis, charging anchor and rounding boundary.","parameters":["prorationMode","dayCountBasis","activationDate"],"failureOutcome":"block"},
+        {"id":"PRI-05","name":"Deterministic calculation order","check":"Apply compatible adjustments, caps and tax in a specified sequence and preserve the calculation breakdown.","parameters":["calculationSequence","taxPolicy","minimumCharge"],"failureOutcome":"block"},
+        {"id":"PRI-06","name":"Fixed-price and contracted cohort","check":"A no-scheduled-rise policy has no annual increase; a new catalogue price does not silently replace an existing customer's accepted schedule.","parameters":["annualChangePolicy","acceptedPriceVersion"],"failureOutcome":"block"}
+      ]
+    },
+    {
+      "id":"PRO","name":"Promotions and discounts","owner":"Commercial promotions","phase":["discover","quote","renew","change"],"sourceIds":["S-LYCA","S-TMF760","S-SF"],
+      "rules":[
+        {"id":"PRO-01","name":"Sale and activation deadlines","check":"The purchase is within the promotion window and activation meets its separate deadline; a visible expired banner cannot qualify.","parameters":["saleWindow","activationDeadline"],"failureOutcome":"block"},
+        {"id":"PRO-02","name":"Redemption and cohort limits","check":"Enforce new-customer, channel, port-in, previous-customer and per-number/account redemption limits.","parameters":["eligibleCohorts","redemptionScope","redemptionLimit"],"failureOutcome":"block"},
+        {"id":"PRO-03","name":"Introductory versus ongoing price","check":"Record the initial price, number of discounted cycles and ongoing price without treating the introductory amount as permanent.","parameters":["introductoryPrice","cycleCount","ongoingPrice"],"failureOutcome":"block"},
+        {"id":"PRO-04","name":"Promotion stacking","check":"Only allowed promotion combinations stack; mutually exclusive benefits use an explicit winning rule or customer choice.","parameters":["stackingGroups","priority","maximumBenefitCount"],"failureOutcome":"block"},
+        {"id":"PRO-05","name":"Qualifying-product discount","check":"A multi-line or bundle discount states its qualifying product, duration and outcome when that product is removed.","parameters":["anchorProduct","discountDuration","anchorRemovalAction"],"failureOutcome":"block"},
+        {"id":"PRO-06","name":"Trial conversion consent","check":"A trial that becomes paid declares the end date, future charge, required acceptance and cancellation route.","parameters":["trialEnd","paidPrice","consentEvidence","cancellationRoute"],"failureOutcome":"needsInformation"}
+      ]
+    },
+    {
+      "id":"ALL","name":"Allowances, usage and spend control","owner":"Charging and policy","phase":["configure","quote","activate","usage"],"sourceIds":["S-EE-TERMS","S-VF-SPEND","S-LYCA"],
+      "rules":[
+        {"id":"ALL-01","name":"Allowance value and unlimited semantics","check":"Declare finite amount or explicit unlimited mode, unit and applicable fair-use policy; never encode unlimited as a large arbitrary number.","parameters":["mode","amount","unit","fairUsePolicy"],"failureOutcome":"block"},
+        {"id":"ALL-02","name":"Allowance reset anchor","check":"Reset on the declared billing/activation/30-day boundary; late events cannot grant the cycle twice.","parameters":["resetAnchor","resetPeriod","eventId"],"failureOutcome":"block"},
+        {"id":"ALL-03","name":"Expiry and rollover","check":"Each base, add-on, gifted or promotional bucket has its own expiry and rollover policy.","parameters":["bucketType","expiresAt","rolloverLimit"],"failureOutcome":"block"},
+        {"id":"ALL-04","name":"Consumption order and rounding","check":"Select an eligible bucket by location, traffic class and priority, with explicit usage rounding and minimum units.","parameters":["bucketPriority","usageClass","roundingQuantum"],"failureOutcome":"block"},
+        {"id":"ALL-05","name":"Exhaustion behavior","check":"Exhaustion follows block, throttle, paid overage or top-up policy; buying a top-up and resetting a cycle restore only authorized entitlement.","parameters":["onExhaustion","throttledSpeed","overageRate"],"failureOutcome":"block"},
+        {"id":"ALL-06","name":"Spend-cap coverage","check":"A spend cap declares which usage and charges it includes and excludes; a zero usage cap does not imply all account charges are zero.","parameters":["capAmount","coveredChargeClasses","excludedChargeClasses"],"failureOutcome":"block"}
+      ]
+    },
+    {
+      "id":"GEO","name":"Destinations, roaming and usage eligibility","owner":"Roaming and charging","phase":["configure","quote","activate","usage"],"sourceIds":["S-EE-TERMS","S-LYCA","S-ERICSSON-ROAM","S-VF-ONENUMBER"],
+      "rules":[
+        {"id":"GEO-01","name":"Domestic destination classification","check":"Domestic calling/text rules explicitly include eligible number classes and exclude premium or special destinations as configured.","parameters":["homeTerritory","numberClasses","excludedDestinations"],"failureOutcome":"block"},
+        {"id":"GEO-02","name":"International destination classification","check":"International minutes from home are restricted by versioned country, number and mobile/landline lists.","parameters":["originTerritory","destinationListVersion","destinationType"],"failureOutcome":"block"},
+        {"id":"GEO-03","name":"Roaming access versus charging","check":"Roaming access permission on Mobile Line does not imply free usage; eligible voice/SMS/data rating policies must also resolve.","parameters":["lineRoamingPermission","visitedNetwork","roamingPricePolicy"],"failureOutcome":"block"},
+        {"id":"GEO-04","name":"Zone and roaming cap","check":"Use the selected plan's zone list and roaming cap; an unlimited domestic bucket does not automatically remove the roaming cap.","parameters":["roamingZoneVersion","roamingDataLimit","domesticBucketPolicy"],"failureOutcome":"block"},
+        {"id":"GEO-05","name":"Roaming fair-use and duration","check":"Apply the operator's stable-link, permanent-roaming and usage-window policy, with required evidence and notices.","parameters":["fairUseWindow","residencyEvidence","noticePolicy"],"failureOutcome":"needsInformation"},
+        {"id":"GEO-06","name":"Companion roaming eligibility","check":"A companion's roaming eligibility follows the device and selected service profile rather than inheriting every primary-line capability.","parameters":["deviceClass","companionProfile","visitedCountry"],"failureOutcome":"block"}
+      ]
+    },
+    {
+      "id":"SHA","name":"Shared allowance and multi-SIM","owner":"Sharing service and charging","phase":["configure","qualify","activate","usage","change"],"sourceIds":["S-EE-GIFT","S-EE-TERMS","S-VF-ONENUMBER","S-GSMA-TS43"],
+      "rules":[
+        {"id":"SHA-01","name":"Account ownership and authority","check":"Donor, recipient and sharing-group membership meet account ownership and authorized-user rules.","parameters":["accountScope","actorRole","membershipEvidence"],"failureOutcome":"block"},
+        {"id":"SHA-02","name":"Mode-specific member eligibility","check":"Gift, pooled allowance and companion modes use different eligible member classes; an operator may exclude watches from gifting while supporting companion sharing.","parameters":["sharingMode","eligibleMemberClasses","excludedMemberClasses"],"failureOutcome":"block"},
+        {"id":"SHA-03","name":"Transfer amount and limits","check":"Gift amount meets quantum/min/max and unreserved donor balance; enforce cycle caps without interpreting unlimited as transferable infinity.","parameters":["quantum","minimum","maximum","cycleCap","availableBalance"],"failureOutcome":"block"},
+        {"id":"SHA-04","name":"Atomic conservation and expiry","check":"A gift debits and credits the same units atomically, applies the declared expiry and handles retry/concurrent requests once.","parameters":["transferId","balanceVersion","expiryPolicy"],"failureOutcome":"block"},
+        {"id":"SHA-05","name":"Companion identity and number association","check":"Companion activation binds its own subscription identity to the correct primary group; number sharing is optional and separate from allowance sharing.","parameters":["primaryLineId","secondaryLineId","numberSharingMode","simResourceId"],"failureOutcome":"block"},
+        {"id":"SHA-06","name":"Group policy inheritance","check":"Declare which bars/entitlements propagate across members, SIM-specific exceptions and maximum member count.","parameters":["inheritedPolicies","simSpecificPolicies","maxMembers"],"failureOutcome":"block"}
+      ]
+    },
+    {
+      "id":"MAP","name":"PS-to-CFS realization and dependencies","owner":"Service design and orchestration","phase":["design","decompose","activate","change"],"sourceIds":["S-SID","S-TMF633","S-TMFC009"],
+      "rules":[
+        {"id":"MAP-01","name":"Service instance identity and reuse","check":"Reuse is scoped by service specification plus line/account/group identity; two PSs do not create duplicate voice or line CFSs, and two different lines are never merged.","parameters":["serviceSpecificationId","instanceKey","productSources"],"failureOutcome":"block"},
+        {"id":"MAP-02","name":"Characteristic transforms and conflicts","check":"Map commercial values into typed service characteristics with explicit units and merge strategies; conflicting permissions or values require resolution.","parameters":["mappingVersion","transforms","mergeStrategy"],"failureOutcome":"block"},
+        {"id":"MAP-03","name":"Dependency graph and inventory reuse","check":"Order required CFSs before dependants; verified existing services can satisfy dependencies; reject cycles and unresolved references.","parameters":["serviceRelationships","existingServiceIds","inventoryVersion"],"failureOutcome":"block"},
+        {"id":"MAP-04","name":"Commercial-only versus service change","check":"A price/commitment-only change does not reprovision the network; an entitlement change amends the existing CFS at the agreed effective time.","parameters":["changedFields","serviceImpactMap","effectiveTime"],"failureOutcome":"block"},
+        {"id":"MAP-05","name":"Technical solution qualification","check":"Choose a feasible RFS solution through technical qualification before activation; qualification alone does not allocate a resource.","parameters":["technicalSolutionId","qualificationEvidence","resourceReservationPolicy"],"failureOutcome":"needsInformation"},
+        {"id":"MAP-06","name":"Shared service release","check":"Removing one commercial component only removes its owned entitlement; keep a shared CFS while other products or dependants require it.","parameters":["ownershipLinks","remainingDependants","releasePolicy"],"failureOutcome":"block"}
+      ]
+    },
+    {
+      "id":"CHG","name":"Changes, migration and termination","owner":"Product and service order management","phase":["configure","order","change"],"sourceIds":["S-TMF620","S-TMF633","S-EE-END","S-EE-LEAVE"],
+      "rules":[
+        {"id":"CHG-01","name":"Allowed transitions","check":"Add, amend, suspend, resume, migrate and remove follow the offer/service lifecycle and published migration paths.","parameters":["allowedActions","sourceVersion","targetVersion"],"failureOutcome":"block"},
+        {"id":"CHG-02","name":"Commitment impact of change","check":"Declare whether the change preserves or restarts commitment and whether charges apply; obtain required acceptance.","parameters":["commitmentImpact","feePolicy","consentEvidence"],"failureOutcome":"needsInformation"},
+        {"id":"CHG-03","name":"Effective change boundary","check":"Upgrades, downgrades and allowance changes use immediate, requested-date or next-cycle timing with explicit unused-balance treatment.","parameters":["effectiveDatePolicy","unusedBalancePolicy","prorationPolicy"],"failureOutcome":"block"},
+        {"id":"CHG-04","name":"Port-in and SIM replacement identity","check":"Number porting or SIM replacement preserves the correct subscription/product identity and retires the replaced resource without duplicating the purchase.","parameters":["portingReference","oldSimId","newSimId","lineId"],"failureOutcome":"block"},
+        {"id":"CHG-05","name":"Parent and member removal","check":"Deleting a primary line or qualifying product first resolves companion memberships, dependent services and conditional discounts.","parameters":["dependants","detachPolicy","discountImpact"],"failureOutcome":"block"},
+        {"id":"CHG-06","name":"Concurrent change and revalidation","check":"Revalidate against current inventory before submission, reject stale changes and apply each authorized change once.","parameters":["expectedInventoryVersion","orderKey","qualificationExpiry"],"failureOutcome":"block"}
+      ]
+    },
+    {
+      "id":"GOV","name":"Publication, approvals, audit and federation","owner":"Catalogue governance","phase":["design","publish","quote","order","sync"],"sourceIds":["S-TMF620","S-TMF760","S-SID"],
+      "rules":[
+        {"id":"GOV-01","name":"Approved publication","check":"A revision is publishable only with complete mappings, required source evidence, ownership, checks and an approval record.","parameters":["revision","owner","approvalRecord","validationReport"],"failureOutcome":"block"},
+        {"id":"GOV-02","name":"Federated source integrity","check":"Imports preserve source identity/version, reject stale updates and unresolved dependencies, and reconcile conflicts before publication.","parameters":["sourceSystem","sourceId","sourceVersion","contentHash"],"failureOutcome":"block"},
+        {"id":"GOV-03","name":"Human commercial exception","check":"Discounts and commercial exceptions need an authorized decision; approval cannot waive hard compatibility, ownership or regulatory constraints.","parameters":["requestedException","approverAuthority","decision"],"failureOutcome":"needsApproval"},
+        {"id":"GOV-04","name":"Reproducible decision snapshot","check":"Pin catalogue/rule/price/zone/device-matrix versions, timestamps and accepted contract terms; never silently reprice a saved accepted contract.","parameters":["snapshotIds","quoteExpiry","acceptedAt","timeZone"],"failureOutcome":"block"},
+        {"id":"GOV-05","name":"Explainability and notification","check":"Return rule IDs, reasons, required information and applicable price/renewal/expiry notices without exposing technical service detail to product managers.","parameters":["decisionTrace","notificationPolicy","audience"],"failureOutcome":"needsInformation"},
+        {"id":"GOV-06","name":"Deterministic activation of rules","check":"Apply the accepted version at its effective event once; support replay, conflict detection and compensation for partial operations; model output cannot override the rules.","parameters":["eventId","effectiveAt","ruleVersion","compensationPolicy"],"failureOutcome":"block"}
+      ]
+    }
+  ]
+}

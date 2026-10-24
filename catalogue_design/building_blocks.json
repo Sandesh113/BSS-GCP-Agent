@@ -1,0 +1,77 @@
+{
+  "version": "2026-10-24.1",
+  "lifecycleStatus": "Draft",
+  "modelStatus": "Application design extension aligned with selected TM Forum patterns; not a TMF API payload or conformance claim",
+  "runtimeStatus": "Not loaded by catalogue_core.py or the current UI",
+  "units": {"data": "MB decimal; 1 GB = 1000 MB", "voice": "minutes", "sms": "messages", "mms": "messages", "money": "GBP decimal strings", "date": "ISO 8601; named Europe/London calendar boundaries"},
+  "configurationOrder": ["select offering and exact root PS version", "resolve customer/inventory/device context", "select child PS options", "apply required/excluded/cardinality rules", "qualify commercial and technical eligibility", "resolve price and future price schedule", "resolve unique CFS instances and dependencies", "hold exceptions for approval", "freeze accepted configuration and versions"],
+  "sharedServicePolicy": {
+    "cfs-mobile-line": {"keyFields": ["subscriptionId", "lineId"], "merge": "Reuse same line; roaming may amend its profile; conflicting bars block"},
+    "cfs-voice": {"keyFields": ["subscriptionId", "lineId"], "merge": "Keep domestic and international buckets separate on one voice instance"},
+    "cfs-sms": {"keyFields": ["subscriptionId", "lineId"], "merge": "One SMS service with versioned eligible buckets"},
+    "cfs-data": {"keyFields": ["subscriptionId", "lineId"], "merge": "One data service; preserve bucket scope, cap and expiry"},
+    "cfs-voicemail": {"keyFields": ["subscriptionId", "lineId"], "merge": "Mailbox plus supported optional visual retrieval feature"},
+    "cfs-mms": {"keyFields": ["subscriptionId", "lineId"], "merge": "MMS service with its own eligibility and charging"},
+    "cfs-shared": {"keyFields": ["accountId", "sharingGroupId"], "merge": "Reuse shared specification; group modes and member identities remain explicit; never merge all groups by CFSS ID alone"}
+  },
+  "serviceSpecifications": [
+    {"id":"cfs-mobile-line","name":"Mobile Line","cardinality":{"scope":"subscriptionGroup","primaryMin":1,"primaryMax":1,"secondaryMin":0,"secondaryMaxParameter":"maximumSecondaryLines"},"requires":[],"characteristics":["lineRole","simForm","accessProfile","roamingPermission","roamingZonePolicy","subscriptionIdentityRef"],"ruleIds":["CAT-03","DEV-01","GEO-03","MAP-01","MAP-02","MAP-03","CHG-04"]},
+    {"id":"cfs-voice","name":"Mobile Voice","cardinality":{"scope":"line","min":0,"max":1},"requires":["cfs-mobile-line"],"characteristics":["domesticVoiceBucket","internationalVoiceBucket","destinationPolicy","voiceBars"],"ruleIds":["ALL-01","ALL-04","GEO-01","GEO-02","MAP-01","MAP-02","MAP-06"]},
+    {"id":"cfs-sms","name":"Mobile SMS","cardinality":{"scope":"line","min":0,"max":1},"requires":["cfs-mobile-line"],"characteristics":["smsBucket","destinationPolicy","smsBars"],"ruleIds":["ALL-01","ALL-04","GEO-01","MAP-01","MAP-03"]},
+    {"id":"cfs-data","name":"Mobile Data","cardinality":{"scope":"line","min":0,"max":1},"requires":["cfs-mobile-line"],"characteristics":["dataBuckets","speedPolicy","roamingDataCap","exhaustionPolicy"],"ruleIds":["ALL-01","ALL-02","ALL-03","ALL-05","GEO-04","MAP-01","MAP-02"]},
+    {"id":"cfs-voicemail","name":"Voicemail","cardinality":{"scope":"voiceLine","min":0,"max":1},"requires":["cfs-voice"],"characteristics":["mailboxClass","visualEnabled","divertPolicy"],"ruleIds":["CAT-05","DEV-05","MAP-03","MAP-06"]},
+    {"id":"cfs-mms","name":"Mobile MMS","cardinality":{"scope":"line","min":0,"max":1},"requires":["cfs-mobile-line"],"technicalPrerequisites":["MMS-capable messaging platform and transport bearer; not necessarily a retail UK data allowance"],"characteristics":["mmsBucket","mmsEnabled","deviceEligibility"],"ruleIds":["DEV-06","ALL-04","MAP-03","MAP-05"]},
+    {"id":"cfs-shared","name":"Shared Allowance / Multi-SIM","cardinality":{"scope":"sharingGroup","min":0,"max":1,"memberMinWhenEnabled":2,"memberMaxParameter":"maximumSharingMembers"},"requires":["cfs-mobile-line"],"conditionalDependencies":[{"when":"gift or pooled data mode","requires":"cfs-data on eligible member lines; verified inventory can satisfy this"},{"when":"companion mode","requires":"secondary Mobile Line/identity plus eligible selected Voice/SMS/Data capabilities"}],"characteristics":["mode","primaryLineId","memberLineIds","numberSharingMode","transferPolicy","inheritedBarPolicy"],"ruleIds":["SHA-01","SHA-02","SHA-03","SHA-04","SHA-05","SHA-06","MAP-01","MAP-03","CHG-05"]}
+  ],
+  "productSpecifications": [
+    {"id":"ps-mobile-access","name":"Mobile access","selection":{"min":1,"max":1},"quantityMeaning":"one configuration component; creates/reuses exactly one primary line plus configured optional secondary identities","parameters":["simForm","accessProfile","numberOption","maximumSecondaryLines"],"realizes":{"serviceSpecificationId":"cfs-mobile-line","action":"createOrReuse","maps":{"simForm":"simForm","accessProfile":"accessProfile"}},"ruleIds":["CAT-03","DEV-01","DEV-04","CHG-04"]},
+    {"id":"ps-uk-voice","name":"UK voice","selection":{"min":0,"max":1},"parameters":["allowanceMode","voiceMinutes","domesticDestinationPolicy"],"realizes":{"serviceSpecificationId":"cfs-voice","action":"createOrReuse","maps":{"voiceMinutes":"domesticVoiceBucket","domesticDestinationPolicy":"destinationPolicy.domestic"}},"ruleIds":["ALL-01","ALL-02","ALL-04","GEO-01","MAP-01"]},
+    {"id":"ps-uk-sms","name":"UK SMS","selection":{"min":0,"max":1},"parameters":["allowanceMode","smsCount","smsDestinationPolicy"],"realizes":{"serviceSpecificationId":"cfs-sms","action":"createOrReuse","maps":{"smsCount":"smsBucket","smsDestinationPolicy":"destinationPolicy"}},"ruleIds":["ALL-01","ALL-02","ALL-04","GEO-01"]},
+    {"id":"ps-uk-data","name":"UK data","selection":{"min":0,"max":1},"parameters":["allowanceMode","dataMb","speedPolicy","exhaustionPolicy"],"realizes":{"serviceSpecificationId":"cfs-data","action":"createOrReuse","maps":{"dataMb":"dataBuckets.domestic","speedPolicy":"speedPolicy","exhaustionPolicy":"exhaustionPolicy"}},"ruleIds":["ALL-01","ALL-02","ALL-03","ALL-05","DEV-04"]},
+    {"id":"ps-international","name":"International calling","selection":{"min":0,"max":1},"parameters":["internationalMinutes","destinationListVersion","destinationType"],"realizes":{"serviceSpecificationId":"cfs-voice","action":"createOrReuse","maps":{"internationalMinutes":"internationalVoiceBucket","destinationListVersion":"destinationPolicy.international"}},"ruleIds":["GEO-02","MAP-01","MAP-02","MAP-06"]},
+    {"id":"ps-roaming","name":"Roaming","selection":{"min":0,"max":1},"parameters":["roamingAccessEnabled","roamingZoneVersion","roamingUsagePolicy"],"realizes":{"serviceSpecificationId":"cfs-mobile-line","action":"amendExisting","maps":{"roamingAccessEnabled":"roamingPermission","roamingZoneVersion":"roamingZonePolicy"},"dependentEffects":"Apply selected usage policy to existing Voice/SMS/Data services through service dependencies; access alone does not grant inclusive use"},"ruleIds":["GEO-03","GEO-04","GEO-05","GEO-06","MAP-01","MAP-04"]},
+    {"id":"ps-voicemail","name":"Voicemail","selection":{"min":0,"max":1},"parameters":["mailboxClass","visualEnabled"],"realizes":{"serviceSpecificationId":"cfs-voicemail","action":"createOrReuse","maps":{"mailboxClass":"mailboxClass","visualEnabled":"visualEnabled"}},"ruleIds":["CAT-05","DEV-05","MAP-03"]},
+    {"id":"ps-mms","name":"MMS / picture messaging","selection":{"min":0,"max":1},"parameters":["mmsAllowanceMode","mmsCount"],"realizes":{"serviceSpecificationId":"cfs-mms","action":"createOrReuse","maps":{"mmsCount":"mmsBucket"}},"ruleIds":["DEV-06","ALL-01","ALL-04","MAP-05"]},
+    {"id":"ps-smartwatch","name":"Smartwatch connectivity","selection":{"min":0,"maxParameter":"maximumCompanionDevices"},"parameters":["deviceModel","secondaryLineId","numberSharingMode"],"realizes":{"serviceSpecificationId":"cfs-shared","action":"joinCompanionGroup","maps":{"secondaryLineId":"memberLineIds","numberSharingMode":"numberSharingMode"},"dependentEffects":"Create or reuse companion Mobile Line and entitlement/eSIM activation where required"},"ruleIds":["ELI-05","DEV-02","DEV-03","DEV-06","GEO-06","SHA-02","SHA-05","SHA-06"]},
+    {"id":"ps-data-gifting","name":"Data gifting","selection":{"min":0,"max":1},"parameters":["donorLineId","recipientLineId","giftAmountMb","giftPolicyVersion"],"realizes":{"serviceSpecificationId":"cfs-shared","action":"transferAllowance","maps":{"giftPolicyVersion":"transferPolicy"},"dependentEffects":"Operate on existing donor/recipient data balances; no new subscription identity"},"ruleIds":["SHA-01","SHA-02","SHA-03","SHA-04","ALL-03"]}
+  ],
+  "compositeSpecification": {
+    "id":"ps-mobile-subscription-reference","name":"Mobile Subscription reference specification","isBundle":true,
+    "childSpecificationIds":["ps-mobile-access","ps-uk-voice","ps-uk-sms","ps-uk-data","ps-international","ps-roaming","ps-voicemail","ps-mms","ps-smartwatch","ps-data-gifting"],
+    "selectionRulesAreExtension":true,
+    "selectionNote":"The list names reusable child definitions. Per-child selection/quantity and dependency constraints are application configuration rules; do not claim they are native min/max fields of TMF620 bundledProductSpecification.",
+    "ruleIds":["CAT-01","CAT-02","CAT-03","CAT-04","CAT-05","CAT-06","GOV-01"]
+  },
+  "offerTemplate": {
+    "id":"po-mobile-flex-reference","name":"Mobile Flex reference offer","lifecycleStatus":"Draft","offeringPattern":"simpleOfferingWithCompositeSpecification",
+    "productSpecificationId":"ps-mobile-subscription-reference",
+    "ruleFamilyIds":["CAT","ELI","DEV","CON","PRI","PRO","ALL","GEO","SHA","MAP","CHG","GOV"],
+    "commercialPolicyBindings":["contractPolicy","pricePolicy","promotionPolicy","eligibilityPolicy","spendCapPolicy"],
+    "servicePolicyBindings":["deviceMatrix","destinationPolicy","roamingPolicy","allowancePolicy","sharingPolicy"],
+    "exampleParameters":{"maximumSecondaryLines":3,"maximumCompanionDevices":3,"maximumSharingMembers":4},
+    "exampleParametersAreOperatorFacts":false,
+    "publicationGate":"Replace illustrative limits with approved operator/cohort values, bind every relevant rule, resolve source conflicts and freeze versions"
+  },
+  "pricePolicyExamples": [
+    {"id":"price-fixed","status":"Illustrative only","basis":"taxIncluded","currency":"GBP","billingPeriod":{"amount":1,"unit":"calendarMonth"},"minimumTerm":{"amount":24,"unit":"calendarMonth"},"pricePeriods":[{"startDate":"2026-10-24","endDateExclusive":"2028-10-24","amount":"20.00"}],"annualChangePolicy":"none"},
+    {"id":"price-calendar","status":"Illustrative only; not an operator tariff","basis":"taxIncluded","currency":"GBP","billingPeriod":{"amount":1,"unit":"calendarMonth"},"minimumTerm":{"amount":24,"unit":"calendarMonth"},"calendarTimeZone":"Europe/London","pricePeriods":[{"startDate":"2026-10-24","endDateExclusive":"2027-04-01","amount":"20.00"},{"startDate":"2027-04-01","endDateExclusive":"2028-04-01","amount":"22.50"},{"startDate":"2028-04-01","endDateExclusive":"2028-10-24","amount":"25.00"}],"anniversaryIncrease":false},
+    {"id":"price-anniversary","status":"Illustrative only; not an operator tariff","basis":"taxIncluded","currency":"GBP","billingPeriod":{"amount":1,"unit":"calendarMonth"},"minimumTerm":{"amount":24,"unit":"calendarMonth"},"contractStart":"2026-10-24","pricePeriods":[{"startDate":"2026-10-24","endDateExclusive":"2027-10-24","amount":"20.00"},{"startDate":"2027-10-24","endDateExclusive":"2028-10-24","amount":"22.50"}],"calendarIncrease":false}
+  ],
+  "decisionStages":[
+    {"stage":"design","purpose":"Validate types, references, constraints, mapping coverage and cycle freedom"},
+    {"stage":"discover","purpose":"Filter catalogue offers for the interaction without treating filtering as a completed risk check"},
+    {"stage":"qualify","purpose":"Resolve commercial eligibility using product/customer inventory context; TMF679 pattern"},
+    {"stage":"configure","purpose":"Apply choices, values, dependencies and pricing policies; TMF760 pattern"},
+    {"stage":"technicalQualify","purpose":"Check feasible service/resource solution without allocation; TMF645/TMFC009 pattern"},
+    {"stage":"quote","purpose":"Show immediate/future charges, terms, decisions and missing evidence; snapshot rule versions"},
+    {"stage":"order","purpose":"Revalidate evidence and inventory, obtain required approval and freeze accepted terms"},
+    {"stage":"decompose","purpose":"Resolve shared CFS instance keys and service dependency order; TMF641-shaped handoff"},
+    {"stage":"usage","purpose":"Charging/policy systems enforce balances, caps and transfers; catalogue supplies definitions"},
+    {"stage":"change","purpose":"Validate migration/cancellation, calculate impact and update owned entitlements"},
+    {"stage":"publish","purpose":"Approve and activate a complete versioned catalogue revision"},
+    {"stage":"sync","purpose":"Stage, reconcile and validate imported versions before publication"},
+    {"stage":"activate","purpose":"Apply authorized service configuration and event-based renewal changes"},
+    {"stage":"bill","purpose":"Apply the accepted price schedule with explicit tax and proration"},
+    {"stage":"renew","purpose":"Check accepted renewal and promotion conditions at the renewal boundary"}
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "offeringId": "po-lifecycle-7ff4d737",
+  "draftHiddenFromCpq": true,
+  "draftQuoteRejected": true,
+  "publishedStatus": "Active",
+  "visibleInCpq": true,
+  "quoteStatus": "VALIDATED",
+  "monthlyPriceGbp": "15.00",
+  "productOrderState": "acknowledged",
+  "cfsActionCount": 3,
+  "draftContractPdfBytes": 2468
+}

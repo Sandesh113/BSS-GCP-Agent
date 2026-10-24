@@ -1,0 +1,164 @@
+{
+  "mode": "offline-labelled-proposals",
+  "passed": 17,
+  "total": 17,
+  "cases": [
+    {
+      "caseId": "agent-mini-decomposition",
+      "kind": "agent",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "monthly": true,
+        "cfs": true,
+        "approvalGate": true
+      }
+    },
+    {
+      "caseId": "agent-plus-decomposition",
+      "kind": "agent",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "monthly": true,
+        "cfs": true,
+        "approvalGate": true
+      }
+    },
+    {
+      "caseId": "agent-two-offers",
+      "kind": "agent",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "monthly": true,
+        "cfs": true,
+        "approvalGate": true
+      }
+    },
+    {
+      "caseId": "agent-discount-approval",
+      "kind": "agent",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "monthly": true,
+        "cfs": true,
+        "approvalGate": true
+      }
+    },
+    {
+      "caseId": "agent-price-hallucination-contained",
+      "kind": "agent",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "monthly": true,
+        "cfs": true,
+        "approvalGate": true
+      }
+    },
+    {
+      "caseId": "agent-unknown-offer-rejected",
+      "kind": "agent",
+      "passed": true,
+      "checks": {
+        "expectedRejection": true
+      }
+    },
+    {
+      "caseId": "agent-duplicate-offer-rejected",
+      "kind": "agent",
+      "passed": true,
+      "checks": {
+        "expectedRejection": true
+      }
+    },
+    {
+      "caseId": "agent-invalid-discount-rejected",
+      "kind": "agent",
+      "passed": true,
+      "checks": {
+        "expectedRejection": true
+      }
+    },
+    {
+      "caseId": "agent-orphan-addon-rejected",
+      "kind": "agent",
+      "passed": true,
+      "checks": {
+        "expectedRejection": true
+      }
+    },
+    {
+      "caseId": "agent-conflicting-plans-rejected",
+      "kind": "agent",
+      "passed": true,
+      "checks": {
+        "expectedRejection": true
+      }
+    },
+    {
+      "caseId": "cpq-compatible-basket",
+      "kind": "cpq",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "monthly": true,
+        "approvalGate": true
+      }
+    },
+    {
+      "caseId": "cpq-long-term-price",
+      "kind": "cpq",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "monthly": true,
+        "approvalGate": true
+      }
+    },
+    {
+      "caseId": "cpq-welcome-approval",
+      "kind": "cpq",
+      "passed": true,
+      "checks": {
+        "status": true,
+        "monthly": true,
+        "approvalGate": true
+      }
+    },
+    {
+      "caseId": "cpq-two-primary-plans-rejected",
+      "kind": "cpq",
+      "passed": true,
+      "checks": {
+        "expectedRejection": true
+      }
+    },
+    {
+      "caseId": "cpq-orphan-addon-rejected",
+      "kind": "cpq",
+      "passed": true,
+      "checks": {
+        "expectedRejection": true
+      }
+    },
+    {
+      "caseId": "cpq-unlisted-term-rejected",
+      "kind": "cpq",
+      "passed": true,
+      "checks": {
+        "expectedRejection": true
+      }
+    },
+    {
+      "caseId": "cpq-expired-promotion-rejected",
+      "kind": "cpq",
+      "passed": true,
+      "checks": {
+        "expectedRejection": true
+      }
+    }
+  ]
+}

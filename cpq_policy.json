@@ -1,0 +1,24 @@
+{
+  "version":"2026-10-24.1",
+  "currency":"GBP",
+  "termPrices":[
+    {"offeringId":"po-mobile-mini","months":9,"monthlyPrice":"14.00"},
+    {"offeringId":"po-mobile-mini","months":12,"monthlyPrice":"12.00"},
+    {"offeringId":"po-mobile-mini","months":16,"monthlyPrice":"11.00"},
+    {"offeringId":"po-mobile-plus","months":9,"monthlyPrice":"22.00"},
+    {"offeringId":"po-mobile-plus","months":12,"monthlyPrice":"20.00"},
+    {"offeringId":"po-mobile-plus","months":16,"monthlyPrice":"19.00"},
+    {"offeringId":"po-sms-extra","months":9,"monthlyPrice":"3.00"},
+    {"offeringId":"po-sms-extra","months":12,"monthlyPrice":"2.50"},
+    {"offeringId":"po-sms-extra","months":16,"monthlyPrice":"2.00"}
+  ],
+  "productConstraints":[
+    {"id":"one-primary-plan","kind":"excludes","offeringIds":["po-mobile-mini","po-mobile-plus"],"reason":"Choose one primary mobile plan in this example quote. Add-ons may be selected alongside it."},
+    {"id":"sms-requires-plan","kind":"requiresAny","offeringId":"po-sms-extra","requiredOfferingIds":["po-mobile-mini","po-mobile-plus"],"reason":"Extra SMS needs a primary mobile plan in the same quote."}
+  ],
+  "promotions":[
+    {"id":"welcome","name":"Welcome offer","discountPercent":"5.00","validFrom":"2026-01-01","validTo":"2028-01-01","offeringIds":["po-mobile-mini","po-mobile-plus"],"description":"Illustrative 5% recurring discount; human review required."},
+    {"id":"christmas-2026","name":"Christmas 2026","discountPercent":"10.00","validFrom":"2026-12-01","validTo":"2027-01-01","offeringIds":["po-mobile-mini","po-mobile-plus"],"description":"Illustrative December promotion; human review required."},
+    {"id":"new-year-2027","name":"New Year 2027","discountPercent":"8.00","validFrom":"2027-01-01","validTo":"2027-02-01","offeringIds":["po-mobile-mini","po-mobile-plus"],"description":"Illustrative January promotion; human review required."}
+  ]
+}

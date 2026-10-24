@@ -1,0 +1,25 @@
+{
+  "version": "2026-10-24.1",
+  "columns": [
+    {"id":"offerId","label":"Offering ID","type":"string","source":"offer.id"},
+    {"id":"segment","label":"Customer segment","type":"string","source":"request.segment"},
+    {"id":"allowedSegments","label":"Offering's allowed segments","type":"list","source":"offer.allowedSegments"},
+    {"id":"baseMonthlyPrice","label":"Offering monthly price","type":"number","source":"offer.monthlyPrice"},
+    {"id":"baseSetupPrice","label":"Offering setup price","type":"number","source":"offer.setupPrice"},
+    {"id":"requestedDiscountPercent","label":"Requested discount %","type":"number","source":"proposal.discountPercent","default":0},
+    {"id":"discountPercent","label":"Effective discount %","type":"number","source":"derived.discountPercent"},
+    {"id":"exceptionRequested","label":"Exception requested","type":"boolean","source":"proposal.exceptionRequested","default":false},
+    {"id":"channel","label":"Sales channel","type":"string","source":"request.context.channel","default":"web"}
+  ],
+  "tables": [
+    {"id":"eligibility","name":"Eligibility","kind":"eligibility","defaultOutcome":{"eligible":false},"rows":[
+      {"id":"eligible-segment","enabled":true,"priority":100,"conditions":[{"column":"segment","operator":"in","valueFrom":"allowedSegments"}],"outcome":{"eligible":true},"reason":"Customer segment is permitted by the offering."}
+    ]},
+    {"id":"pricing","name":"Prices","kind":"price","defaultOutcome":{"monthlyPrice":{"column":"baseMonthlyPrice"},"setupPrice":{"column":"baseSetupPrice"}},"rows":[]},
+    {"id":"discounts","name":"Discounts","kind":"discount","defaultOutcome":{"discountPercent":"0.00"},"rows":[]},
+    {"id":"approvals","name":"Approvals","kind":"approval","defaultOutcome":{"decision":"approve"},"rows":[
+      {"id":"exception-review","enabled":true,"priority":200,"conditions":[{"column":"exceptionRequested","operator":"eq","value":true}],"outcome":{"decision":"review"},"reason":"A commercial exception requires a human decision."},
+      {"id":"discount-review","enabled":true,"priority":100,"conditions":[{"column":"discountPercent","operator":"gt","value":0}],"outcome":{"decision":"review"},"reason":"A discount requires a human decision."}
+    ]}
+  ]
+}

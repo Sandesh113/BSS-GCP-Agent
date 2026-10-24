@@ -1,0 +1,126 @@
+{
+  "@type": "ServiceOrder",
+  "state": "acknowledged",
+  "productOrder": {
+    "id": "order-demo-jason"
+  },
+  "orderItem": [
+    {
+      "id": "1-ps-voice-cfs-voice",
+      "action": "add",
+      "productOrderItem": {
+        "id": "1"
+      },
+      "service": {
+        "@type": "Service",
+        "serviceSpecification": {
+          "id": "cfs-voice",
+          "name": "Mobile voice CFS",
+          "@type": "ServiceSpecificationRef"
+        },
+        "serviceCharacteristic": [
+          {
+            "name": "voiceMinutes",
+            "value": 100,
+            "unit": "minutes"
+          }
+        ]
+      },
+      "proposedFulfilment": {
+        "targetSystem": "HSS",
+        "operation": "setVoiceAllowance",
+        "value": 100,
+        "unit": "minutes"
+      }
+    },
+    {
+      "id": "1-ps-data-cfs-data",
+      "action": "add",
+      "productOrderItem": {
+        "id": "1"
+      },
+      "service": {
+        "@type": "Service",
+        "serviceSpecification": {
+          "id": "cfs-data",
+          "name": "Mobile data CFS",
+          "@type": "ServiceSpecificationRef"
+        },
+        "serviceCharacteristic": [
+          {
+            "name": "dataGb",
+            "value": 2,
+            "unit": "GB"
+          }
+        ]
+      },
+      "proposedFulfilment": {
+        "targetSystem": "Packet Gateway / customer profile",
+        "operation": "setDataAllowance",
+        "value": 2,
+        "unit": "GB"
+      }
+    },
+    {
+      "id": "1-ps-sms-cfs-sms",
+      "action": "add",
+      "productOrderItem": {
+        "id": "1"
+      },
+      "service": {
+        "@type": "Service",
+        "serviceSpecification": {
+          "id": "cfs-sms",
+          "name": "Mobile messaging CFS",
+          "@type": "ServiceSpecificationRef"
+        },
+        "serviceCharacteristic": [
+          {
+            "name": "smsCount",
+            "value": 100,
+            "unit": "messages"
+          }
+        ]
+      },
+      "proposedFulfilment": {
+        "targetSystem": "SMSC",
+        "operation": "setSmsAllowance",
+        "value": 100,
+        "unit": "messages"
+      }
+    },
+    {
+      "id": "2-ps-sms-cfs-sms",
+      "action": "add",
+      "productOrderItem": {
+        "id": "2"
+      },
+      "service": {
+        "@type": "Service",
+        "serviceSpecification": {
+          "id": "cfs-sms",
+          "name": "Mobile messaging CFS",
+          "@type": "ServiceSpecificationRef"
+        },
+        "serviceCharacteristic": [
+          {
+            "name": "smsCount",
+            "value": 1000,
+            "unit": "messages"
+          }
+        ]
+      },
+      "proposedFulfilment": {
+        "targetSystem": "SMSC",
+        "operation": "setSmsAllowance",
+        "value": 1000,
+        "unit": "messages"
+      }
+    }
+  ],
+  "note": [
+    {
+      "text": "CFS orchestration proposal only; no RFS selection or network provisioning."
+    }
+  ]
+}

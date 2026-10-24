@@ -1,0 +1,8 @@
+[
+  {"request": {"requestId": "eval-mini-explicit", "customerId": "eval-customer", "segment": "consumer", "text": "I want Mobile Mini with 100 voice minutes, 2 GB data and 100 SMS."}, "expectedProductOfferingIds": ["po-mobile-mini"]},
+  {"request": {"requestId": "eval-mini-needs", "customerId": "eval-customer", "segment": "business", "text": "Quote a mobile plan with 100 minutes of calls, 2GB of data and 100 texts."}, "expectedProductOfferingIds": ["po-mobile-mini"]},
+  {"request": {"requestId": "eval-plus-explicit", "customerId": "eval-customer", "segment": "consumer", "text": "I would like Mobile Plus with 500 minutes, 10 GB of data and 500 texts."}, "expectedProductOfferingIds": ["po-mobile-plus"]},
+  {"request": {"requestId": "eval-plus-needs", "customerId": "eval-customer", "segment": "business", "text": "I need a plan giving me 10 gigabytes of data, 500 voice minutes and 500 SMS messages."}, "expectedProductOfferingIds": ["po-mobile-plus"]},
+  {"request": {"requestId": "eval-sms-explicit", "customerId": "eval-customer", "segment": "consumer", "text": "Add the Extra SMS offer with 1000 text messages."}, "expectedProductOfferingIds": ["po-sms-extra"], "expectedValid": false},
+  {"request": {"requestId": "eval-mini-and-extra", "customerId": "eval-customer", "segment": "consumer", "text": "I want Mobile Mini and the Extra SMS add-on."}, "expectedProductOfferingIds": ["po-mobile-mini", "po-sms-extra"]}
+]

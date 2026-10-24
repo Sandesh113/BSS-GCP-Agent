@@ -1,0 +1,31 @@
+{
+  "version": "2026-10-21.1",
+  "currency": "GBP",
+  "serviceSpecifications": [
+    {"id": "cfs-voice", "name": "Mobile voice CFS", "targetSystem": "HSS", "operation": "setVoiceAllowance", "unit": "minutes"},
+    {"id": "cfs-data", "name": "Mobile data CFS", "targetSystem": "Packet Gateway / customer profile", "operation": "setDataAllowance", "unit": "GB"},
+    {"id": "cfs-sms", "name": "Mobile messaging CFS", "targetSystem": "SMSC", "operation": "setSmsAllowance", "unit": "messages"}
+  ],
+  "productSpecifications": [
+    {"id": "ps-voice", "name": "Voice allowance", "characteristic": "voiceMinutes", "unit": "minutes", "serviceSpecificationIds": ["cfs-voice"]},
+    {"id": "ps-data", "name": "Data allowance", "characteristic": "dataGb", "unit": "GB", "serviceSpecificationIds": ["cfs-data"]},
+    {"id": "ps-sms", "name": "SMS allowance", "characteristic": "smsCount", "unit": "messages", "serviceSpecificationIds": ["cfs-sms"]},
+    {"id": "ps-mobile-mini", "name": "Mobile Mini composite specification", "isBundle": true,
+     "bundledProductSpecification": [{"id": "ps-voice", "value": 100}, {"id": "ps-data", "value": 2}, {"id": "ps-sms", "value": 100}]},
+    {"id": "ps-mobile-plus", "name": "Mobile Plus composite specification", "isBundle": true,
+     "bundledProductSpecification": [{"id": "ps-voice", "value": 500}, {"id": "ps-data", "value": 10}, {"id": "ps-sms", "value": 500}]},
+    {"id": "ps-sms-extra", "name": "Extra SMS composite specification", "isBundle": true,
+     "bundledProductSpecification": [{"id": "ps-sms", "value": 1000}]}
+  ],
+  "productOfferings": [
+    {"id": "po-mobile-mini", "name": "Mobile Mini", "lifecycleStatus": "Active", "monthlyPrice": "12.00",
+     "setupPrice": "0.00", "allowedSegments": ["consumer", "business"],
+     "productSpecification": {"id": "ps-mobile-mini"}},
+    {"id": "po-mobile-plus", "name": "Mobile Plus", "lifecycleStatus": "Active", "monthlyPrice": "20.00",
+     "setupPrice": "0.00", "allowedSegments": ["consumer", "business"],
+     "productSpecification": {"id": "ps-mobile-plus"}},
+    {"id": "po-sms-extra", "name": "Extra SMS", "lifecycleStatus": "Active", "monthlyPrice": "2.50",
+     "setupPrice": "0.00", "allowedSegments": ["consumer", "business"],
+     "productSpecification": {"id": "ps-sms-extra"}}
+  ]
+}

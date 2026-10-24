@@ -1,0 +1,11 @@
+{
+  "catalogueOffer": "po-cloud-demo-3gb",
+  "catalogueVersion": "609d1b8d-9058-430d-a9ea-410bd3028330",
+  "cpqStatus": "VALIDATED",
+  "productOrderId": "order-e3dc06c85296",
+  "productOrderState": "acknowledged",
+  "cfsActionCount": 3,
+  "contractPdfBytes": 2464,
+  "agentStatus": "VALIDATED",
+  "agentOffer": "po-cloud-demo-3gb"
+}

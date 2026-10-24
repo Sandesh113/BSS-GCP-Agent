@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BSS Catalogue Studio</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/assistant.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">B</span><div><strong>BSS Agent</strong><small>CATALOGUE STUDIO</small></div></div>
+    <div class="top-right"><span class="pill preview-pill">BSS DEMO</span><span class="avatar">S</span></div>
+  </header>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="sidebar-label">WORKSPACE</div>
+      <button class="nav active" data-view="catalogue"><span>▦</span> Catalogue Studio</button>
+      <button class="nav" data-view="rules"><span>☷</span> Business rules</button>
+      <button class="nav" data-view="cpq"><span>◈</span> CPQ configurator</button>
+      <button class="nav" data-view="request"><span>✦</span> Customer request</button>
+      <div class="sidebar-rule"></div>
+      <div class="sidebar-label">GO TO MARKET</div>
+      <div class="flow-step"><b>01</b><span>Product Specifications</span></div>
+      <div class="flow-step"><b>02</b><span>Product Offerings</span></div>
+      <div class="sidebar-bottom"><div class="status-dot"></div><span>Catalogue workspace<br><small>Google Cloud demo</small></span></div>
+    </aside>
+    <main>
+      <section id="catalogue-view" class="view">
+        <div class="heading"><div><div class="eyebrow">PRODUCT MANAGER WORKSPACE</div><h1>Build a product for market</h1><p>Describe a new product in your own words, or use the specification cards below.</p></div><div class="catalogue-actions"><button id="open-assistant" class="primary" type="button">✦ Create with Gemini</button><button id="save" class="secondary" type="button">Save catalogue</button></div></div>
+        <div class="notice"><span>ⓘ</span><div><strong>Two ways to build</strong><p>The guided assistant asks about each available product specification, price and customer segment. It saves a Draft for your review. Publish validates its service mapping and makes it available in CPQ. You can still use the manual cards below.</p></div></div>
+        <div class="column-grid product-columns">
+          <section class="column"><div class="column-head"><span class="number">1</span><div><h2>Product Specifications</h2><small>What the customer receives</small></div></div><div id="specs" class="cards"></div><button id="new-ps" class="add-button">＋ Add leaf specification</button><button id="new-bundle" class="add-button subtle">＋ Add composite specification</button></section>
+          <section class="column"><div class="column-head"><span class="number">2</span><div><h2>Product Offerings</h2><small>Price and market availability</small></div></div><div id="offers" class="cards"></div><button id="new-po" class="add-button">＋ Add offering</button></section>
+        </div>
+        <div class="footer-note">Catalogue version <code id="version"></code> · Saved changes are shared by this deployment.</div>
+      </section>
+      <section id="rules-view" class="view hidden">
+        <div class="heading"><div><div class="eyebrow">CONFIGURABLE DECISION TABLES</div><h1>Business rules</h1><p>Change conditions and outcomes as table rows. Saved changes apply to the next preview.</p></div><button id="save-rules" class="primary">Save rules</button></div>
+        <div class="notice"><span>ⓘ</span><div><strong>How matching works</strong><p>All conditions in a row must match. The highest priority wins. Equal-priority matches are rejected. Prices, discounts, eligibility and approvals each have a fallback.</p></div></div>
+        <div id="rule-tabs" class="rule-tabs" role="tablist" aria-label="Decision table"></div>
+        <div id="rule-table-panel" class="panel"></div>
+        <details class="panel rule-column-panel"><summary>Input columns <span id="column-count"></span></summary><p>Register a customer input here to use it in conditions and the quote form.</p><div id="rule-columns"></div><button id="add-rule-column" class="secondary" type="button">Add input column</button></details>
+        <div class="footer-note">Rule version <code id="rules-version"></code> · Saved rules apply to the next quote.</div>
+      </section>
+      <section id="cpq-view" class="view hidden">
+        <div class="heading"><div><div class="eyebrow">CONFIGURE · PRICE · QUOTE</div><h1>Choose your mobile products</h1><p>Compare the allowances and monthly prices, then build a quote for your customer.</p></div></div>
+        <div class="cpq-customer-strip"><div class="cpq-customer-icon">JS</div><div><span>YOUR CUSTOMER</span><strong id="cpq-customer-name">Jason Smith</strong><small id="cpq-customer-meta">UK consumer · example customer</small></div></div>
+        <div class="cpq-shop-layout">
+          <section class="cpq-shop-main"><div class="cpq-shop-heading"><div><h2>Available products</h2><p>Choose a plan, then add any compatible extras.</p></div><span id="cpq-offer-count"></span></div><div id="cpq-plan-grid" class="cpq-plan-grid"></div></section>
+          <aside class="panel cpq-basket"><div class="cpq-basket-head"><h2>Your selection</h2><span id="cpq-selected-count">0 selected</span></div><div id="cpq-basket-lines" class="cpq-basket-lines"></div><div class="cpq-promotion-block"><label>Promotion<select id="cpq-promotion"><option value="">No promotion</option></select></label><p id="cpq-promotion-detail" class="form-hint"></p></div><div id="cpq-estimate" class="cpq-estimate"></div><button id="cpq-validate" class="primary full" type="button">Validate and price quote →</button><p class="form-hint">Illustrative prices before tax. Promotional discounts require approval.</p></aside>
+        </div>
+        <div id="cpq-result" class="panel cpq-result-panel"><div class="empty-icon">◈</div><h2>Your quote will appear here</h2><p>Choose at least one product, then validate the configuration.</p></div>
+      </section>
+      <section id="request-view" class="view hidden">
+        <div class="heading"><div><div class="eyebrow">CUSTOMER JOURNEY</div><h1>Describe what you need</h1><p>Enter a request, choose a published offer and inspect the quote.</p></div></div>
+        <div class="request-layout"><form id="request-form" class="panel"><h2>New customer request</h2><label>Customer ID<input name="customerId" value="customer-123" required></label><label>Segment<select name="segment"><option value="consumer">Consumer</option><option value="business">Business</option></select></label><div id="request-context"></div><label>Requested discount %<input name="discountPercent" type="number" min="0" max="100" step="0.01" value="0" required></label><label class="check-label"><input name="exceptionRequested" type="checkbox"> Request a commercial exception</label><label>Your instruction<textarea name="text" rows="5" required>I'd like a mobile plan with 100 minutes of voice, 2 GB of data and 100 SMS.</textarea></label><label>Product offering for manual preview<select name="productOfferingId" id="request-offer"></select></label><button class="primary full" type="submit" value="manual">Preview selected offer →</button><button class="secondary full" type="submit" value="gemini">Ask Gemini to select an offer →</button><p class="form-hint">The Gemini path runs asynchronously through Pub/Sub and the cloud agent. Pricing and eligibility remain code controlled.</p></form><div id="result" class="panel result-panel"><div class="empty-icon">✦</div><h2>Your quote will appear here</h2><p>Submit a request to see the offer, allowances and price.</p></div></div>
+      </section>
+    </main>
+  </div>
+  <dialog id="editor"><form id="editor-form" method="dialog"><div class="dialog-head"><div><div class="eyebrow" id="editor-type"></div><h2 id="editor-title"></h2></div><button id="close-editor" class="icon-button" type="button">×</button></div><div id="editor-fields"></div><div class="dialog-actions"><button id="cancel-editor" class="secondary" type="button">Cancel</button><button class="primary" type="submit">Create</button></div></form></dialog>
+  <dialog id="assistant-dialog" class="assistant-dialog" aria-labelledby="assistant-title"><div class="dialog-head"><div><div class="eyebrow">GUIDED PRODUCT CREATION</div><h2 id="assistant-title">Describe your new product</h2><p class="assistant-subtitle">Gemini interprets your words. Catalogue validation controls what is saved.</p></div><button id="close-assistant" class="icon-button" type="button" aria-label="Close product assistant">×</button></div><div id="assistant-thread" class="assistant-thread" role="log" aria-live="polite"></div><div id="assistant-review" class="assistant-review hidden"></div><form id="assistant-form" class="assistant-form"><label for="assistant-answer">Your answer</label><div class="assistant-input-row"><textarea id="assistant-answer" rows="2" maxlength="2000" placeholder="For example: A mobile plan with 100 voice minutes, 2 GB data and 100 texts" required></textarea><button id="assistant-mic" class="secondary" type="button" aria-label="Speak your answer" title="Record an answer for Gemini transcription">🎙</button></div><div class="assistant-form-actions"><span id="assistant-voice-note" role="status" aria-live="polite">Type your answer, or press the microphone to record it.</span><button id="assistant-send" class="primary" type="submit">Send answer</button></div></form><div class="assistant-footer"><button id="assistant-create" class="primary hidden" type="button">Save Draft product</button><p id="assistant-error" role="alert"></p></div></dialog>
+  <dialog id="rule-editor"><form id="rule-editor-form"><div class="dialog-head"><h2 id="rule-editor-title">Edit rule</h2><button id="close-rule-editor" class="icon-button" type="button" aria-label="Close rule editor">×</button></div><div id="rule-editor-fields" class="dialog-fields"></div><p id="rule-editor-error" role="alert"></p><div class="dialog-actions"><button id="cancel-rule-editor" class="secondary" type="button">Cancel</button><button class="primary" type="submit">Keep changes</button></div></form></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="/app.js"></script>
+  <script src="/rules.js"></script>
+  <script src="/cpq.js"></script>
+  <script src="/assistant.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</body></html>

@@ -1,0 +1,6 @@
+{
+  "version": "2026-10-24.2",
+  "customers": [
+    {"id":"customer-demo-jason","givenName":"Jason","familyName":"Smith","email":"jason.smith@example.com","mobile":"07700 900123","address":{"line1":"10 Demo Lane","city":"London","postcode":"EC1A 1BB","countryCode":"GB"},"segment":"consumer"}
+  ]
+}
