@@ -61,6 +61,8 @@ Every order        ──►  decomposes automatically into the CFS actions the 
 
 > 🎧 **[Narrated walkthrough: from product specification to network-ready service order](https://claude.ai/artifact/UKXrQttsEHUT7CnP8fBX6s)**
 > Animated scenes and real payloads, narrated with Google Gemini text-to-speech. Covers the 10 PS → 7 CFSS library, one-step launch, gated publication, decision tables, CPQ, the AI channel, TMF622 and TMF641 decomposition.
+>
+> 📁 A copy lives in [`demo/`](demo/README.md): open `demo/catalogue-to-network.html` locally with its recorded narration and the scripts that produced it.
 
 | CPQ configurator | Business rules | Order and contract |
 | :---: | :---: | :---: |
@@ -289,6 +291,7 @@ infra/                 Terraform: foundation · platform · ui · workload
 catalogue_design/      10 PS / 7 CFSS reference design and 72 rule templates
 eval/                  offline and live evaluations with reports
 tests/                 pytest suite, including the expert review
+demo/                  narrated walkthrough page, Charon narration clips and recording scripts
 ```
 
 </details>

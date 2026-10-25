@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Catalogue-to-Network Walkthrough</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Layout concept: a narrated console that walks the TMF layers top-down; colour encodes the layer (product = blue, service = teal, network = amber) on every scene. */
+  :root{
+    --bg:#0b1017; --panel:#121a25; --panel-2:#0e151f; --fg:#e6ecf3; --muted:#8e9bad; --line:#263142;
+    --prod:#6ea8ff; --prod-soft:#17243a; --svc:#4fd1b5; --svc-soft:#11302a; --net:#f2b25c; --net-soft:#382915;
+    --stop:#f07a6e; --stop-soft:#3a1d1a; --on-accent:#08111c; color-scheme:dark;
+    --font-display:'IBM Plex Sans Condensed','IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;
+    --font-body:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+    --bg:#f4f6f9; --panel:#ffffff; --panel-2:#f8fafc; --fg:#142030; --muted:#556273; --line:#d8dee8;
+    --prod:#1d5bd6; --prod-soft:#e4ecfb; --svc:#0f8a72; --svc-soft:#dcf3ee; --net:#a8650a; --net-soft:#fbefdc;
+    --stop:#c0392b; --stop-soft:#fbe4e1; --on-accent:#ffffff; color-scheme:light}}
+  :root[data-theme="light"]{
+    --bg:#f4f6f9; --panel:#ffffff; --panel-2:#f8fafc; --fg:#142030; --muted:#556273; --line:#d8dee8;
+    --prod:#1d5bd6; --prod-soft:#e4ecfb; --svc:#0f8a72; --svc-soft:#dcf3ee; --net:#a8650a; --net-soft:#fbefdc;
+    --stop:#c0392b; --stop-soft:#fbe4e1; --on-accent:#ffffff; color-scheme:light}
+
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;margin:0;
+       padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px}
+  .wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+  header{display:flex;flex-direction:column;gap:8px}
+  .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--svc)}
+  h1{font-family:var(--font-display);font-weight:700;font-size:clamp(24px,3.6vw,36px);line-height:1.1;margin:0;text-wrap:balance}
+  h2{font-family:var(--font-display);font-weight:600;font-size:21px;margin:10px 0 0}
+  .sub{color:var(--muted);margin:0;max-width:70ch;line-height:1.55}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+  .stage{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .screen{position:relative;min-height:480px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;padding:52px 22px 22px}
+  .where{position:absolute;top:14px;left:16px;right:16px;display:flex;flex-wrap:wrap;gap:6px;font-family:var(--font-mono);font-size:11.5px}
+  .tag{border:1px solid var(--line);border-radius:5px;padding:3px 8px;color:var(--muted);background:var(--panel)}
+  .tag.p{color:var(--prod);border-color:var(--prod-soft)} .tag.s{color:var(--svc);border-color:var(--svc-soft)} .tag.n{color:var(--net);border-color:var(--net-soft)}
+  .scene{width:100%;max-width:960px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;min-width:0}
+  .hscroll{width:100%;overflow-x:auto}
+  .hscroll svg{display:block;min-width:660px;width:100%;height:auto}
+
+  .a{animation:rise .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0s)}
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}}
+  .draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw .7s ease-out forwards;animation-delay:var(--d,0s)}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .fade{animation:fadein .6s both;animation-delay:var(--d,0s)}
+  @keyframes fadein{from{opacity:0}}
+
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+  .box.p{border-color:var(--prod)} .box.s{border-color:var(--svc)} .box.n{border-color:var(--net);border-style:dashed}
+  .box h3{margin:0;font-family:var(--font-display);font-weight:600;font-size:17px}
+  .lab{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .lab.p{color:var(--prod)} .lab.s{color:var(--svc)} .lab.n{color:var(--net)}
+  .mono{font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+  .muted{color:var(--muted)}
+  .arrow{font-family:var(--font-mono);color:var(--muted);font-size:20px}
+  .chip{display:inline-flex;align-items:center;gap:6px;border-radius:5px;padding:3px 8px;font-family:var(--font-mono);font-size:11.5px;font-weight:500}
+  .chip.live{background:var(--svc-soft);color:var(--svc)} .chip.lib{background:var(--prod-soft);color:var(--prod)}
+  .chip.next{background:var(--net-soft);color:var(--net)} .chip.stop{background:var(--stop-soft);color:var(--stop)}
+  .cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%}
+  .cols2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%}
+  .li{display:flex;gap:8px;align-items:flex-start;line-height:1.45}
+  .li .m{flex:none;font-family:var(--font-mono);font-weight:600}
+  table.dt{border-collapse:collapse;font-size:13px;width:100%;min-width:560px}
+  table.dt th,table.dt td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+  table.dt th{font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:.04em;color:var(--muted);background:var(--panel)}
+  table.dt td{background:var(--panel-2)}
+  table.dt .newcol{background:var(--prod-soft);color:var(--fg)} table.dt tr.newrow td{background:var(--svc-soft)}
+  pre.json{margin:0;font-family:var(--font-mono);font-size:12px;line-height:1.55;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:12px 14px;overflow-x:auto;max-width:100%}
+  pre.json .k{color:var(--prod)} pre.json .s{color:var(--svc)} pre.json .hl{background:var(--net-soft);color:var(--net);border-radius:3px}
+  .pipe{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;justify-content:center;width:100%}
+  .pipe .box{min-width:132px;flex:1 1 132px;max-width:190px}
+  svg .bx-p{fill:var(--panel);stroke:var(--prod);stroke-width:1.4}
+  svg .bx-s{fill:var(--panel);stroke:var(--svc);stroke-width:1.6}
+  svg .t{fill:var(--fg);font-family:var(--font-body);font-size:14px}
+  svg .t2{fill:var(--muted);font-family:var(--font-mono);font-size:10.5px}
+  svg .live{fill:var(--svc);font-family:var(--font-mono);font-size:10px;font-weight:600}
+  svg .edge{fill:none;stroke:var(--muted);stroke-width:1.4;opacity:.75}
+  svg .edge.reuse{stroke:var(--net);stroke-width:2.2;opacity:1}
+  svg .edge.amend{stroke:var(--net);stroke-width:2;stroke-dasharray:5 5;opacity:1}
+
+  .cap-bar{display:flex;align-items:center;gap:14px;padding:14px 18px;border-top:1px solid var(--line);background:var(--panel)}
+  .narrator{flex:none;width:46px;height:46px}
+  .narrator .mouth{transform-origin:23px 31px}
+  .talking .mouth{animation:talk .26s infinite alternate}
+  @keyframes talk{from{transform:scaleY(.35)}to{transform:scaleY(1.3)}}
+  .cap{flex:1;min-width:0;margin:0;line-height:1.55;font-size:16px}
+  .cap .who{display:block;font-family:var(--font-mono);font-size:11.5px;color:var(--svc);letter-spacing:.06em;margin-bottom:2px}
+  .cap.idle .txt{color:var(--muted);font-style:italic}
+  .controls-bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 18px 16px;background:var(--panel)}
+  .controls{display:flex;flex-wrap:wrap;gap:8px}
+  button{font-family:var(--font-body);font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--panel-2);color:var(--fg);padding:9px 15px;border-radius:7px;cursor:pointer}
+  button:hover{border-color:var(--svc)}
+  button:focus-visible{outline:2px solid var(--svc);outline-offset:2px}
+  button.primary{background:var(--svc);border-color:var(--svc);color:var(--on-accent);min-width:100px}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .toggle{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);margin-left:auto}
+  .voice-pick{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted)}
+  .voice-pick select{font-family:var(--font-body);font-size:13px;background:var(--panel-2);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;max-width:260px}
+  .voice-note{width:100%;margin:0;font-size:13px;line-height:1.5;color:var(--net);background:var(--net-soft);border-radius:7px;padding:8px 12px}
+  .progress{display:flex;gap:5px;flex-wrap:wrap;width:100%}
+  .progress button{width:28px;height:7px;padding:0;border-radius:3px;border:0;background:var(--line)}
+  .progress button.done{background:var(--svc-soft)} .progress button.now{background:var(--svc)}
+
+  .status{width:100%;overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+  .status table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px}
+  .status th,.status td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.45}
+  .status th{font-family:var(--font-mono);font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+  .status tr:last-child td{border-bottom:0}
+  details{background:var(--panel);border:1px solid var(--line);border-radius:12px}
+  summary{cursor:pointer;padding:14px 18px;font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .script{padding:0 18px 18px;display:flex;flex-direction:column;gap:8px}
+  .script p{margin:0;line-height:1.6;padding:9px 12px;background:var(--panel-2);border-left:2px solid var(--line);border-radius:4px}
+  .script .n{font-family:var(--font-mono);color:var(--svc);margin-right:8px;font-size:12px}
+  footer{color:var(--muted);font-size:12.5px;line-height:1.55}
+
+  @media (max-width:760px){
+    .cols{grid-template-columns:1fr} .cols2{grid-template-columns:1fr}
+    .screen{padding-top:76px}
+    .toggle{margin-left:0}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .a,.fade{animation:none!important}
+    .draw{animation:none!important;stroke-dashoffset:0}
+    .talking .mouth{animation:none}
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">BSS AI Agent PoC · TM Forum-patterned · Google Cloud</span>
+    <h1>From product specification to a network-ready service order</h1>
+    <p class="sub">A narrated, three-minute walkthrough for telecom teams: reusable PS → CFSS realization, one-step go-to-market for product managers, configurable decision tables, and TMF622 → TMF641 decomposition. Press Play, or screen-record the panel to make a video.</p>
+    <div class="legend"><span><i style="background:var(--prod)"></i>Product layer · TMF620 / 648 / 622</span><span><i style="background:var(--svc)"></i>Service layer · TMF633 / 641</span><span><i style="background:var(--net)"></i>Resource and network · next integration</span></div>
+  </header>
+
+  <section class="stage" aria-label="Walkthrough player">
+    <div class="screen" id="screen"></div>
+    <div class="cap-bar" id="capBar">
+      <svg class="narrator" viewBox="0 0 46 46" aria-hidden="true">
+        <rect x="1" y="1" width="44" height="44" rx="12" fill="var(--svc-soft)" stroke="var(--svc)" stroke-width="2"/>
+        <circle cx="16" cy="19" r="2.6" fill="var(--fg)"/><circle cx="30" cy="19" r="2.6" fill="var(--fg)"/>
+        <ellipse class="mouth" cx="23" cy="31" rx="6.5" ry="3" fill="var(--fg)"/>
+      </svg>
+      <p class="cap idle" id="caption" aria-live="polite"><span class="who" id="who">NARRATOR</span><span class="txt" id="captionText">Press Play to start the walkthrough.</span></p>
+    </div>
+    <div class="controls-bar">
+      <div class="controls">
+        <button class="primary" id="playBtn" type="button">▶ Play</button>
+        <button id="backBtn" type="button">← Back</button>
+        <button id="nextBtn" type="button">Next →</button>
+        <button id="replayBtn" type="button">↺ Start over</button>
+      </div>
+      <label class="toggle"><input type="checkbox" id="muteToggle"> Mute narration</label>
+      <label class="voice-pick" id="voicePick" hidden>Voice <select id="voiceSelect"></select></label>
+      <p class="voice-note" id="voiceNote" hidden>The recorded narration could not play here, so this browser's built-in voice is reading instead. Reload the page to try the recording again.</p>
+      <div class="progress" id="progress" aria-label="Chapters"></div>
+    </div>
+  </section>
+
+  <h2>What is running today, and what is designed</h2>
+  <div class="status"><table>
+    <thead><tr><th>Capability</th><th>Status</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>Leaf PS voice, data, SMS realized into three CFSS with network targets (HSS, packet gateway profile, SMSC)</td><td><span class="chip live">Running</span></td><td class="mono">catalogue.json · catalogue_core.py</td></tr>
+      <tr><td>Ten-PS / seven-CFSS reference library with reuse, dependencies, cardinality and instance keys</td><td><span class="chip lib">Designed, validated</span></td><td class="mono">catalogue_design/building_blocks.json</td></tr>
+      <tr><td>Product manager creates PO + composite PS; CFS realization inherited; Draft → Active → Retired</td><td><span class="chip live">Running</span></td><td class="mono">Catalogue Studio · Create with Gemini</td></tr>
+      <tr><td>Decision tables (eligibility, price, discount, approval) with editable rows and input columns</td><td><span class="chip live">Running</span></td><td class="mono">Business rules · business_rules.py</td></tr>
+      <tr><td>Spoken or typed rules: Gemini drafts one row (and any new input column); the engine validates; a person saves</td><td><span class="chip lib">Built, tested locally · not yet deployed</span></td><td class="mono">Say or type a rule · rule_assistant.py</td></tr>
+      <tr><td>CPQ: TMF648-shaped quote, term prices, product constraints, dated promotions, 30-day validity</td><td><span class="chip live">Running</span></td><td class="mono">CPQ configurator · cpq_core.py</td></tr>
+      <tr><td>TMF622 ProductOrder and TMF641-shaped CFS service order with target system and operation</td><td><span class="chip live">Running</span></td><td class="mono">/tmf-api/productOrderingManagement/v5</td></tr>
+      <tr><td>Service order management, RFS/resource orders and activation adapters to network elements</td><td><span class="chip next">Next integration</span></td><td class="mono">TMFC007 pattern · TMF652 / TMF640</td></tr>
+    </tbody></table></div>
+
+  <details>
+    <summary>Narration script (read or copy)</summary>
+    <div class="script" id="scriptList"></div>
+    <div style="display:flex;justify-content:flex-end;padding:0 18px 18px"><button id="copyBtn" type="button">Copy full script</button></div>
+  </details>
+
+  <footer>Narration recorded with Google Gemini 2.5 Pro text-to-speech (voice: Charon). TMF-shaped payloads, not TM Forum CTK-certified implementations. Customer, prices and allowances are illustrative. No network element is provisioned by this proof of concept.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  function d(x){return 'style="--d:'+x+'s"';}
+
+  // Scene 2: ten PS realize into seven CFSS (from catalogue_design/building_blocks.json).
+  var PS=[["Mobile access","ps-mobile-access",0,""],["UK voice","ps-uk-voice",1,"live"],["UK SMS","ps-uk-sms",2,"live"],["UK data","ps-uk-data",3,"live"],
+          ["International calling","ps-international",1,"reuse"],["Roaming","ps-roaming",0,"amend"],["Voicemail","ps-voicemail",4,""],
+          ["MMS","ps-mms",5,""],["Smartwatch","ps-smartwatch",6,"reuse"],["Data gifting","ps-data-gifting",6,"reuse"]];
+  var CFS=[["Mobile Line","roaming amends the profile"],["Mobile Voice","domestic + international buckets"],["Mobile SMS",""],["Mobile Data",""],
+           ["Voicemail","requires Mobile Voice"],["Mobile MMS",""],["Shared Allowance","companion / gift modes"]];
+  function realizationSvg(){
+    var s='<svg viewBox="0 0 900 470" role="img" aria-label="Ten product specifications on the left connect to seven customer-facing service specifications on the right.">';
+    s+='<text class="t2" x="10" y="9">PRODUCT SPECIFICATIONS · TMF620</text><text class="t2" x="640" y="9">CFS SPECIFICATIONS · TMF633</text>';
+    PS.forEach(function(p,i){
+      var ly=14+i*45+17, ry=20+p[2]*64+20, cls=p[3]==="reuse"?"edge reuse":p[3]==="amend"?"edge amend":"edge";
+      if(p[3]==="amend") s+='<path class="'+cls+' fade" '+d(.6+i*.18)+' d="M260,'+ly+' C450,'+ly+' 450,'+ry+' 640,'+ry+'"/>';
+      else s+='<path class="'+cls+' draw" pathLength="1" '+d(.6+i*.18)+' d="M260,'+ly+' C450,'+ly+' 450,'+ry+' 640,'+ry+'"/>';
+    });
+    PS.forEach(function(p,i){
+      var y=14+i*45;
+      s+='<g class="fade" '+d(i*.06)+'><rect class="bx-p" x="10" y="'+y+'" width="250" height="34" rx="6"/><text class="t" x="22" y="'+(y+22)+'">'+p[0]+'</text>'+
+         (p[3]==="live"?'<text class="live" x="248" y="'+(y+21)+'" text-anchor="end">RUNNING</text>':'<text class="t2" x="248" y="'+(y+21)+'" text-anchor="end">'+p[1]+'</text>')+'</g>';
+    });
+    CFS.forEach(function(c,j){
+      var y=20+j*64;
+      s+='<g class="fade" '+d(.3+j*.06)+'><rect class="bx-s" x="640" y="'+y+'" width="250" height="40" rx="6"/><text class="t" x="652" y="'+(y+(c[1]?18:25))+'">'+c[0]+'</text>'+
+         (c[1]?'<text class="t2" x="652" y="'+(y+33)+'">'+c[1]+'</text>':'')+'</g>';
+    });
+    return s+'</svg>';
+  }
+
+  var scenes=[
+    {title:"Overview",tags:[["p","TMF620"],["s","TMF633"],["p","TMF648"],["p","TMF622"],["s","TMF641"]],
+     say:"Welcome. This is a catalogue-driven BSS proof of concept on Google Cloud, patterned on TM Forum. In three minutes: how a product manager launches a mobile plan, how commercial rules are configured, and how each order is decomposed into a network-ready service order.",
+     html:'<div class="pipe">'+[["p","Catalogue","PO → PS → CFSS","TMF620 · TMF633"],["p","Rules","Decision tables","Eligibility · price · discount · approval"],["p","Quote","CPQ","TMF648 · TMF679 · TMF760"],["p","Product order","ProductOrder","TMF622"],["s","Service order","CFS actions","TMF641-shaped"],["n","Network","Activation","Next integration"]].map(function(b,i){
+       return '<div class="box '+b[0]+' a" '+d(i*.3)+'><span class="lab '+b[0]+'">'+b[1]+'</span><h3>'+b[2]+'</h3><span class="mono muted">'+b[3]+'</span></div>';}).join('<span class="arrow a" style="align-self:center;--d:.1s">→</span>')+'</div>'},
+
+    {title:"Reusable PS library",tags:[["p","Product specifications"],["s","CFS specifications"],["s","SID ProductSpecRealizedAsCFSSpec"]],wide:true,
+     say:"It starts with a reusable library. Ten product specifications, from mobile access and UK voice to roaming, voicemail and data gifting, realize into seven customer-facing service specifications. Reuse is deliberate: UK voice and international calling share the Mobile Voice CFS with separate buckets, and roaming amends the existing Mobile Line instead of creating a new service.",
+     html:function(){return '<div class="hscroll">'+realizationSvg()+'</div><div class="row a" '+d(2.6)+' style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center"><span class="chip live">RUNNING · voice, data, SMS</span><span class="chip lib">Reference library · 10 PS → 7 CFSS</span><span class="chip next">Amber · reused or amended CFS</span></div>';}},
+
+    {title:"Service design rules",tags:[["s","CFS-to-CFS dependencies"],["s","Cardinality"],["s","Instance keys"]],
+     say:"Service designers own the realization: CFS dependencies, cardinality and instance keys. Voicemail requires Mobile Voice, which requires exactly one primary Mobile Line. Instances are keyed by subscription and line, so overlapping products merge into one service rather than duplicating it.",
+     html:'<div class="cols">'+
+       '<div class="box s a" '+d(0)+'><span class="lab s">Dependency chain</span><div class="mono">Voicemail</div><div class="mono muted">  requires ↓</div><div class="mono">Mobile Voice · SMS · Data · MMS</div><div class="mono muted">  require ↓</div><div class="mono">Mobile Line</div></div>'+
+       '<div class="box s a" '+d(.6)+'><span class="lab s">Cardinality</span><div class="li"><span class="m">1</span><span>primary Mobile Line per subscription group</span></div><div class="li"><span class="m">0..1</span><span>Voice, SMS, Data, Voicemail, MMS per line</span></div><div class="li"><span class="m">0..1</span><span>Shared Allowance per sharing group, 2+ members</span></div></div>'+
+       '<div class="box s a" '+d(1.2)+'><span class="lab s">Instance key and merge</span><div class="mono">(subscriptionId, lineId)</div><div class="li"><span class="m">→</span><span>UK voice + International = one Mobile Voice instance, two buckets</span></div><div class="li"><span class="m">→</span><span>Conflicting roaming bars block the order</span></div></div></div>'},
+
+    {title:"Go-to-market in one step",tags:[["p","Catalogue Studio"],["p","Create with Gemini"]],
+     say:"That makes go-to-market simple. The product manager picks specifications, sets allowances and price, in the studio or by describing the plan to Gemini. The platform generates the product offering, the composite product specification and the inherited CFS realization. The product manager never touches service design.",
+     html:'<div class="box p a" '+d(0)+' style="max-width:300px"><span class="lab p">Product manager says</span><div>“Guided Mini: 100 minutes, 2 GB, no texts, £11 a month, consumers.”</div><span class="chip lib">Typed, spoken or drag-and-drop</span></div>'+
+       '<span class="arrow a" '+d(.7)+'>→</span>'+
+       '<div class="col a" '+d(1)+' style="display:flex;flex-direction:column;gap:8px;min-width:0;flex:1 1 300px;max-width:420px">'+
+       '<div class="box p a" '+d(1.1)+'><span class="lab p">Generated · ProductOffering</span><span class="mono">po-guided-… · lifecycleStatus: Draft · £11.00 · [consumer]</span></div>'+
+       '<div class="box p a" '+d(1.6)+'><span class="lab p">Generated · composite ProductSpecification</span><span class="mono">isBundle: true · bundledProductSpecification: ps-voice=100, ps-data=2</span></div>'+
+       '<div class="box s a" '+d(2.1)+'><span class="lab s">Inherited · CFS realization (hidden from PM)</span><span class="mono">ps-voice → cfs-voice (HSS) · ps-data → cfs-data (packet gateway)</span></div></div>'},
+
+    {title:"Gated publication",tags:[["p","Publish offer"],["p","Retire offer"],["p","lifecycleStatus"]],
+     say:"Publication is gated. An offering moves from Draft to Active only when every leaf specification has a CFS mapping with matching units. Retiring an offer stops new sales, while existing orders keep their snapshots.",
+     html:'<div class="cols">'+
+       '<div class="box p a" '+d(0)+'><span class="lab p">Draft</span><h3>Hidden from CPQ and agent</h3><span class="muted">Editable; cannot be quoted</span></div>'+
+       '<div class="box s a" '+d(.6)+'><span class="lab s">Publish gate</span><div class="li"><span class="m" style="color:var(--svc)">✓</span><span>Every leaf PS has a CFS mapping</span></div><div class="li"><span class="m" style="color:var(--svc)">✓</span><span>PS unit equals CFS unit (GB never meets TB)</span></div><div class="li"><span class="m" style="color:var(--svc)">✓</span><span>Prices, segments and references valid</span></div></div>'+
+       '<div class="box p a" '+d(1.2)+'><span class="lab p">Active → Retired</span><h3>On sale, then withdrawn</h3><span class="muted">Retired cannot be republished or deleted; orders keep their catalogue snapshot</span></div></div>'},
+
+    {title:"Configurable decision tables",tags:[["p","Business rules"],["p","Eligibility · Price · Discount · Approval"]],
+     say:"Commercial rules are configurable lookup tables: eligibility, price, discount and approval. A rule can be typed or spoken in plain English. Gemini drafts the row, and the rules engine validates it before anyone saves. Need a new input, like contract length? It becomes a new column. The highest priority wins, ties are rejected, and effective dates apply. No code, no redeploy.",
+     html:'<div class="box p a" '+d(0)+' style="width:100%;flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px"><span class="lab p">Spoken rule</span><span>“Mobile Mini is £15 a month on a 24-month contract from 1 April 2027.”</span><span class="chip lib">Gemini drafts → engine validates → you save</span></div>'+
+       '<div class="hscroll a" '+d(.8)+'><table class="dt"><thead><tr><th>Row</th><th>Offering ID</th><th>Segment</th><th class="newcol a" '+d(1.2)+'>contractMonths  ＋ new column</th><th>Monthly £</th><th>Priority</th><th>Effective</th></tr></thead><tbody>'+
+       '<tr><td class="mono">default</td><td class="mono">any</td><td class="mono">any</td><td class="mono newcol">—</td><td class="mono">catalogue price</td><td class="mono">fallback</td><td class="mono">always</td></tr>'+
+       '<tr class="newrow a" '+d(2)+'><td class="mono">mini-24m</td><td class="mono">= po-mobile-mini</td><td class="mono">in [consumer]</td><td class="mono">= 24</td><td class="mono">15.00</td><td class="mono">100</td><td class="mono">2027-04-01 →</td></tr></tbody></table></div>'+
+       '<div class="cols2 a" '+d(2.8)+'><div class="box p"><span class="lab p">Evaluation order</span><span class="mono">eligibility → price → discount → approval</span></div>'+
+       '<div class="box p"><span class="lab p">Semantics</span><span class="muted">AND within a row · highest priority wins · equal-priority match is an error · start inclusive, end exclusive · every save versioned with a SHA-256 snapshot</span></div></div>'},
+
+    {title:"Configure, price, quote",tags:[["p","CPQ configurator"],["p","TMF648"],["p","TMF679"],["p","TMF760"],["p","TMF671"]],
+     say:"Configure, price, quote. CPQ qualifies the customer segment, applies term prices and product constraints, such as one primary plan and add-ons needing a parent, and applies dated promotions. The quote is TMF648-shaped, valid for thirty days, and pins the catalogue and rule versions used.",
+     html:'<div class="cols">'+
+       '<div class="box p a" '+d(0)+'><span class="lab p">Basket · Jason Smith</span><div class="mono">Mobile Mini · 12 m · £12.00</div><div class="mono">Extra SMS · 12 m · £2.50</div><h3>£14.50 / month</h3></div>'+
+       '<div class="box p a" '+d(.6)+'><span class="lab p">Checks</span><div class="li"><span class="m" style="color:var(--svc)">✓</span><span>Segment qualified (TMF679 pattern)</span></div><div class="li"><span class="m" style="color:var(--svc)">✓</span><span>excludes: Mini + Plus</span></div><div class="li"><span class="m" style="color:var(--svc)">✓</span><span>requiresAny: Extra SMS needs a plan</span></div><div class="li"><span class="m" style="color:var(--net)">!</span><span>Any discount → state pending, human approval</span></div></div>'+
+       '<div class="box p a" '+d(1.2)+'><span class="lab p">Quote · TMF648-shaped</span><span class="mono">state: approved</span><span class="mono">validFor: 30 days</span><span class="mono">catalogue, rules and policy versions pinned</span></div></div>'},
+
+    {title:"AI channel, same guardrails",tags:[["p","Pub/Sub → Gemini agent"],["p","Deterministic validator"]],
+     say:"The AI channel follows the same guardrails. Gemini only proposes active offering IDs; it never sets prices or allowances. Deterministic code validates the proposal, and any discount or exception is held for a human.",
+     html:'<div class="box p a" '+d(0)+' style="max-width:280px"><span class="lab p">Customer request</span><div>“A plan with 100 minutes, 2 GB and 100 texts.”</div></div><span class="arrow a" '+d(.5)+'>→</span>'+
+       '<div class="box p a" '+d(.8)+' style="max-width:260px"><span class="lab p">Gemini proposes</span><span class="mono">{"productOfferingIds": ["po-mobile-mini"]}</span><span class="muted">Sees Active offers only, no CFS design</span></div><span class="arrow a" '+d(1.3)+'>→</span>'+
+       '<div class="box s a" '+d(1.6)+' style="max-width:280px"><span class="lab s">Code validates</span><div class="li"><span class="m" style="color:var(--svc)">✓</span><span>Active, eligible, compatible</span></div><div class="li"><span class="m" style="color:var(--stop)">✕</span><span>Model-supplied price or allowance ignored</span></div><div class="li"><span class="m" style="color:var(--net)">!</span><span>Discount or exception → human review</span></div></div>'},
+
+    {title:"TMF622 ProductOrder",tags:[["p","POST /tmf-api/productOrderingManagement/v5/productOrder"]],
+     say:"On acceptance, a TMF622 ProductOrder is generated from the stored quote and validated against it, so tampered or stale payloads are rejected, and resubmission is idempotent.",
+     html:'<pre class="json a" '+d(0)+' style="flex:1 1 360px">{\n  <span class="k">"@type"</span>: <span class="s">"ProductOrder"</span>,\n  <span class="k">"id"</span>: <span class="hl">"MOB-2226-24102026-0001"</span>,\n  <span class="k">"quote"</span>: [{ <span class="k">"id"</span>: <span class="s">"quote-0b41ff3f290d"</span> }],\n  <span class="k">"productOrderItem"</span>: [{\n    <span class="k">"action"</span>: <span class="s">"add"</span>,\n    <span class="k">"productOffering"</span>: { <span class="k">"id"</span>: <span class="s">"po-mobile-mini"</span> },\n    <span class="k">"product"</span>: { <span class="k">"productSpecification"</span>: { <span class="k">"id"</span>: <span class="s">"ps-mobile-mini"</span> },\n      <span class="k">"productCharacteristic"</span>: [ voiceMinutes 100, dataGb 2, smsCount 100 ] },\n    <span class="k">"itemTerm"</span>: [{ <span class="k">"duration"</span>: { <span class="k">"amount"</span>: 12, <span class="k">"units"</span>: <span class="s">"month"</span> } }]\n  }]\n}</pre>'+
+       '<div class="col a" '+d(1)+' style="display:flex;flex-direction:column;gap:8px;max-width:300px"><div class="box p"><span class="lab p">Validated against the quote</span><span class="muted">Payload must equal the server-built order; tampered quantity or price → 400 TMF630 Error</span></div><div class="box p"><span class="lab p">Idempotent</span><span class="muted">Same quote resubmitted → original order returned</span></div></div>'},
+
+    {title:"Decomposition to CFS",tags:[["s","TMF641-shaped ServiceOrder"],["s","PS → CFS characteristic mapping"]],
+     say:"Then decomposition. Each ordered composite resolves to its leaf specifications and their CFSs, producing a TMF641-shaped service order: voice minutes for the HSS, data allowance for the packet gateway profile, and SMS for the SMSC, with characteristics carried across.",
+     html:'<div class="box p a" '+d(0)+' style="max-width:220px"><span class="lab p">Product order item 1</span><h3>Mobile Mini</h3><span class="mono">ps-mobile-mini</span></div><span class="arrow a" '+d(.5)+'>→</span>'+
+       '<div class="col" style="display:flex;flex-direction:column;gap:8px;flex:1 1 380px;max-width:560px">'+
+       [["cfs-voice","voiceMinutes = 100 minutes","HSS","setVoiceAllowance"],["cfs-data","dataGb = 2 GB","Packet Gateway / customer profile","setDataAllowance"],["cfs-sms","smsCount = 100 messages","SMSC","setSmsAllowance"]].map(function(c,i){
+         return '<div class="box s a" '+d(.8+i*.5)+'><span class="lab s">orderItem 1-'+c[0]+' · action add</span><span class="mono">serviceSpecification '+c[0]+' · '+c[1]+'</span><span class="mono" style="color:var(--net)">proposedFulfilment → '+c[2]+' · '+c[3]+'</span></div>';}).join("")+'</div>'},
+
+    {title:"Hand-off to the network",tags:[["s","TMFC003 → TMF641 → TMFC007"],["n","TMF652 · TMF640"]],
+     say:"That service order is the hand-off to service order management, the TMFC007 pattern, which drives resource orders and activation adapters toward the network elements. Those adapters are the next integration step; today nothing is provisioned. That's the flow: reusable specifications, configurable rules, and a network-ready order.",
+     html:'<div class="pipe">'+[["s","Built","TMF641-shaped ServiceOrder","CFS items + target system + operation"],["s","Pattern","Service Order Management","TMFC007 · invoked by TMFC003"],["n","Next","Resource order / RFS","TMF652"],["n","Next","Activation adapters","TMF640"],["n","Next","Network elements","HSS/UDM · PCF/PGW · SMSC"]].map(function(b,i){
+       return '<div class="box '+b[0]+' a" '+d(i*.45)+'><span class="lab '+b[0]+'">'+b[1]+'</span><h3>'+b[2]+'</h3><span class="mono muted">'+b[3]+'</span></div>';}).join('<span class="arrow a" style="align-self:center;--d:.2s">→</span>')+'</div>'+
+       '<div class="row a" '+d(2.6)+' style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center"><span class="chip live">Running · catalogue → rules → quote → TMF622 → TMF641</span><span class="chip next">Next · SOM, RFS and activation adapters</span></div>'}
+  ];
+
+  var screen=document.getElementById("screen"), capBar=document.getElementById("capBar"), caption=document.getElementById("caption"),
+      captionText=document.getElementById("captionText"), who=document.getElementById("who"), progress=document.getElementById("progress"),
+      playBtn=document.getElementById("playBtn"), backBtn=document.getElementById("backBtn"), nextBtn=document.getElementById("nextBtn"),
+      replayBtn=document.getElementById("replayBtn"), mute=document.getElementById("muteToggle");
+  var current=0, playing=false, token=0, voice=null, hasSpeech="speechSynthesis" in window;
+
+  function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+  // Same narrator voice as the incident-triage walkthrough: Google UK English Male. It ships only with Chrome,
+  // so elsewhere rank the browser's voices by how natural they sound instead of taking the robotic default.
+  var voiceSelect=document.getElementById("voiceSelect"), voicePick=document.getElementById("voicePick"),
+      voiceNote=document.getElementById("voiceNote"), voices=[];
+  function rank(v){
+    if(/google uk english.*male/i.test(v.name)) return 0;
+    if(/google.*uk.*male/i.test(v.name)) return 1;
+    if(/natural|online|neural/i.test(v.name)) return /en-GB/i.test(v.lang)?2:3;
+    if(/^google/i.test(v.name)) return /en-GB/i.test(v.lang)?4:5;
+    return /en-GB/i.test(v.lang)?6:7;
+  }
+  function loadVoices(){
+    if(!hasSpeech) return;
+    var chosen=voice&&voice.name;
+    voices=window.speechSynthesis.getVoices().filter(function(v){return /^en/i.test(v.lang);})
+      .sort(function(a,b){return rank(a)-rank(b);});
+    if(!voices.length) return;
+    voiceSelect.innerHTML=voices.map(function(v,i){return '<option value="'+i+'">'+esc(v.name)+'</option>';}).join("");
+    var keep=voices.findIndex(function(v){return v.name===chosen;});
+    voiceSelect.value=String(keep>=0?keep:0);
+    voice=voices[Number(voiceSelect.value)];
+  }
+  // Only shown when a recorded clip cannot play and the browser's own voice takes over.
+  function showFallback(){voicePick.hidden=!voices.length;voiceNote.hidden=false;}
+  if(hasSpeech){loadVoices();window.speechSynthesis.onvoiceschanged=loadVoices;}
+  voiceSelect.addEventListener("change",function(){voice=voices[Number(voiceSelect.value)]||null;});
+
+  scenes.forEach(function(s,i){
+    var b=document.createElement("button");b.type="button";b.title=s.title;b.setAttribute("aria-label","Chapter "+(i+1)+": "+s.title);
+    b.addEventListener("click",function(){go(i,playing);});progress.appendChild(b);
+  });
+  document.getElementById("scriptList").innerHTML=scenes.map(function(s,i){
+    return '<p><span class="n">'+String(i+1).padStart(2,"0")+'</span><b>'+esc(s.title)+'.</b> '+esc(s.say)+'</p>';}).join("");
+  document.getElementById("copyBtn").addEventListener("click",function(){
+    var btn=this, full=scenes.map(function(s,i){return (i+1)+". "+s.title+"\n"+s.say;}).join("\n\n");
+    function done(ok){btn.textContent=ok?"Copied":"Select the text above to copy";setTimeout(function(){btn.textContent="Copy full script";},1600);}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(full).then(function(){done(true);},function(){done(false);});}else{done(false);}
+  });
+
+  function render(i){
+    var s=scenes[i], body=typeof s.html==="function"?s.html():s.html;
+    screen.innerHTML='<div class="where">'+s.tags.map(function(t){return '<span class="tag '+t[0]+'">'+esc(t[1])+'</span>';}).join("")+'</div><div class="scene">'+body+'</div>';
+    who.textContent="STEP "+(i+1)+"/"+scenes.length+" · "+s.title.toUpperCase();
+    captionText.textContent=s.say;caption.classList.remove("idle");
+    Array.prototype.forEach.call(progress.children,function(dot,k){dot.className=k<i?"done":(k===i?"now":"");});
+    backBtn.disabled=i===0;nextBtn.disabled=i===scenes.length-1;
+  }
+  // Recorded narration: Gemini 2.5 Pro TTS, voice Charon, one clip per scene in audio/.
+  var clip=new Audio(), useClips=true;
+  clip.preload="auto";
+  function narrate(i){
+    if(mute.checked||!useClips) return speak(scenes[i].say);
+    return new Promise(function(resolve){
+      var finished=false;
+      function end(){if(!finished){finished=true;clip.onended=clip.onerror=null;capBar.classList.remove("talking");resolve();}}
+      function fallback(){if(finished)return;useClips=false;finished=true;clip.onended=clip.onerror=null;showFallback();speak(scenes[i].say).then(resolve);}
+      capBar.classList.add("talking");
+      clip.onended=end;clip.onerror=fallback;
+      clip.src="audio/scene-"+String(i+1).padStart(2,"0")+".wav";
+      var started=clip.play();
+      if(started&&started.catch)started.catch(function(e){if(e&&e.name==="AbortError")return;fallback();});
+    });
+  }
+  function stopVoice(){clip.pause();clip.onended=clip.onerror=null;if(hasSpeech){try{window.speechSynthesis.cancel();}catch(e){}}capBar.classList.remove("talking");}
+  function speak(text){
+    return new Promise(function(resolve){
+      var finished=false;function end(){if(!finished){finished=true;capBar.classList.remove("talking");resolve();}}
+      capBar.classList.add("talking");
+      if(mute.checked||!hasSpeech){setTimeout(end,Math.max(4000,text.length*60));return;}
+      try{
+        window.speechSynthesis.cancel();
+        var u=new SpeechSynthesisUtterance(text);u.rate=.95;u.pitch=1;if(voice)u.voice=voice;
+        u.onend=end;u.onerror=end;window.speechSynthesis.speak(u);
+        setTimeout(end,Math.max(7000,text.length*95)); // safety net if the browser never fires onend
+      }catch(e){setTimeout(end,3000);}
+    });
+  }
+  async function playFrom(i){
+    var my=++token;playing=true;playBtn.textContent="❚❚ Pause";
+    for(var k=i;k<scenes.length;k++){
+      if(my!==token) return;
+      current=k;render(k);
+      await narrate(k);
+      if(my!==token) return;
+      await new Promise(function(r){setTimeout(r,800);});
+    }
+    if(my===token){playing=false;playBtn.textContent="↺ Play again";}
+  }
+  function pause(){token++;playing=false;stopVoice();playBtn.textContent="▶ Play";}
+  function go(i,keep){pause();current=Math.max(0,Math.min(scenes.length-1,i));if(keep){playFrom(current);}else{render(current);}}
+  function idle(){caption.classList.add("idle");captionText.textContent="Press Play to start the walkthrough.";who.textContent="NARRATOR";}
+
+  playBtn.addEventListener("click",function(){
+    if(playing){pause();return;}
+    if(playBtn.textContent.indexOf("again")>=0){current=0;}
+    playFrom(current);
+  });
+  backBtn.addEventListener("click",function(){go(current-1,playing);});
+  nextBtn.addEventListener("click",function(){go(current+1,playing);});
+  replayBtn.addEventListener("click",function(){go(0,false);idle();});
+  // Restart the current scene so it switches cleanly between the recording and silent timing.
+  mute.addEventListener("change",function(){if(playing)go(current,true);});
+  document.addEventListener("keydown",function(e){
+    if(e.target.closest&&e.target.closest("button,input,summary"))return;
+    if(e.key===" "){e.preventDefault();playBtn.click();}
+    else if(e.key==="ArrowRight"&&!nextBtn.disabled)nextBtn.click();
+    else if(e.key==="ArrowLeft"&&!backBtn.disabled)backBtn.click();
+  });
+
+  render(0);idle();
+})();
+</script>
+
+</html>
