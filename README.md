@@ -14,8 +14,8 @@ A TM Forum ODA-patterned BSS proof of concept: reusable Product → CFS catalogu
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![Tests](https://img.shields.io/badge/tests-128%20passing-2ea44f)
 
-### ▶️ [Watch the narrated walkthrough](https://claude.ai/artifact/UKXrQttsEHUT7CnP8fBX6s)
-<sub>11 scenes · about 4½ minutes · for telecom and BSS teams · also available as a <a href="https://claude.ai/artifact/BiQxuwgGDMfFjopicz59Ve">plain-English tour</a></sub>
+### ▶️ [Watch the narrated walkthrough](https://sandesh113.github.io/BSS-GCP-Agent/)
+<sub>11 scenes · about 4½ minutes · for telecom and BSS teams · hosted with GitHub Pages</sub>
 
 </div>
 
@@ -59,7 +59,7 @@ Every order        ──►  decomposes automatically into the CFS actions the 
 
 ## 🎬 Demo
 
-> 🎧 **[Narrated walkthrough: from product specification to network-ready service order](https://claude.ai/artifact/UKXrQttsEHUT7CnP8fBX6s)**
+> 🎧 **[Narrated walkthrough: from product specification to network-ready service order](https://sandesh113.github.io/BSS-GCP-Agent/)**
 > Animated scenes and real payloads, narrated with Google Gemini text-to-speech. Covers the 10 PS → 7 CFSS library, one-step launch, gated publication, decision tables, CPQ, the AI channel, TMF622 and TMF641 decomposition.
 >
 > 📁 A copy lives in [`demo/`](demo/README.md): open `demo/catalogue-to-network.html` locally with its recorded narration and the scripts that produced it.

@@ -2,13 +2,13 @@
 
 **From product specification to a network-ready service order**: an 11-scene, about 4½-minute walkthrough of this BSS proof of concept for telecom and BSS teams. It is narrated with Google Gemini 2.5 Pro text-to-speech (voice **Charon**, calm British male presenter).
 
-Online copy: [claude.ai/artifact/UKXrQttsEHUT7CnP8fBX6s](https://claude.ai/artifact/UKXrQttsEHUT7CnP8fBX6s)
+Online copy: [GitHub Pages walkthrough](https://sandesh113.github.io/BSS-GCP-Agent/)
 
 ## Open it
 
 Double-click [`catalogue-to-network.html`](catalogue-to-network.html) and press **▶ Play**. The page reads its narration from `audio/`, so keep the folder together. Fonts load from Google Fonts when online; everything else is in the page.
 
-GitHub's file viewer shows the HTML source; it does not run the player. Clone the repository or download the `demo/` folder with its `audio/` files before opening the page.
+GitHub's file viewer shows the HTML source; use the GitHub Pages link above to play it online. For offline use, clone the repository or download the `demo/` folder with its `audio/` files.
 
 If your browser blocks local audio, serve the folder instead and open <http://127.0.0.1:8000/catalogue-to-network.html>:
 
