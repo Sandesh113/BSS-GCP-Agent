@@ -8,6 +8,8 @@ Online copy: [claude.ai/artifact/UKXrQttsEHUT7CnP8fBX6s](https://claude.ai/artif
 
 Double-click [`catalogue-to-network.html`](catalogue-to-network.html) and press **▶ Play**. The page reads its narration from `audio/`, so keep the folder together. Fonts load from Google Fonts when online; everything else is in the page.
 
+GitHub's file viewer shows the HTML source; it does not run the player. Clone the repository or download the `demo/` folder with its `audio/` files before opening the page.
+
 If your browser blocks local audio, serve the folder instead and open <http://127.0.0.1:8000/catalogue-to-network.html>:
 
 ```powershell

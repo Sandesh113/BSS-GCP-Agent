@@ -141,7 +141,7 @@
   <header>
     <span class="eyebrow">BSS AI Agent PoC · TM Forum-patterned · Google Cloud</span>
     <h1>From product specification to a network-ready service order</h1>
-    <p class="sub">A narrated, three-minute walkthrough for telecom teams: reusable PS → CFSS realization, one-step go-to-market for product managers, configurable decision tables, and TMF622 → TMF641 decomposition. Press Play, or screen-record the panel to make a video.</p>
+    <p class="sub">A narrated, four-and-a-half-minute walkthrough for telecom teams: reusable PS → CFSS realization, one-step go-to-market for product managers, configurable decision tables, and TMF622 → TMF641 decomposition. Press Play, or screen-record the panel to make a video.</p>
     <div class="legend"><span><i style="background:var(--prod)"></i>Product layer · TMF620 / 648 / 622</span><span><i style="background:var(--svc)"></i>Service layer · TMF633 / 641</span><span><i style="background:var(--net)"></i>Resource and network · next integration</span></div>
   </header>
 
@@ -177,7 +177,7 @@
       <tr><td>Ten-PS / seven-CFSS reference library with reuse, dependencies, cardinality and instance keys</td><td><span class="chip lib">Designed, validated</span></td><td class="mono">catalogue_design/building_blocks.json</td></tr>
       <tr><td>Product manager creates PO + composite PS; CFS realization inherited; Draft → Active → Retired</td><td><span class="chip live">Running</span></td><td class="mono">Catalogue Studio · Create with Gemini</td></tr>
       <tr><td>Decision tables (eligibility, price, discount, approval) with editable rows and input columns</td><td><span class="chip live">Running</span></td><td class="mono">Business rules · business_rules.py</td></tr>
-      <tr><td>Spoken or typed rules: Gemini drafts one row (and any new input column); the engine validates; a person saves</td><td><span class="chip lib">Built, tested locally · not yet deployed</span></td><td class="mono">Say or type a rule · rule_assistant.py</td></tr>
+      <tr><td>Spoken or typed rules: Gemini drafts one row (and any new input column); the engine validates; a person saves</td><td><span class="chip live">Running</span></td><td class="mono">Say or type a rule · rule_assistant.py</td></tr>
       <tr><td>CPQ: TMF648-shaped quote, term prices, product constraints, dated promotions, 30-day validity</td><td><span class="chip live">Running</span></td><td class="mono">CPQ configurator · cpq_core.py</td></tr>
       <tr><td>TMF622 ProductOrder and TMF641-shaped CFS service order with target system and operation</td><td><span class="chip live">Running</span></td><td class="mono">/tmf-api/productOrderingManagement/v5</td></tr>
       <tr><td>Service order management, RFS/resource orders and activation adapters to network elements</td><td><span class="chip next">Next integration</span></td><td class="mono">TMFC007 pattern · TMF652 / TMF640</td></tr>
@@ -302,7 +302,8 @@
       captionText=document.getElementById("captionText"), who=document.getElementById("who"), progress=document.getElementById("progress"),
       playBtn=document.getElementById("playBtn"), backBtn=document.getElementById("backBtn"), nextBtn=document.getElementById("nextBtn"),
       replayBtn=document.getElementById("replayBtn"), mute=document.getElementById("muteToggle");
-  var current=0, playing=false, token=0, voice=null, hasSpeech="speechSynthesis" in window;
+  var current=0, playing=false, token=0, voice=null, hasSpeech="speechSynthesis" in window,
+      finishNarration=null;
 
   function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;");}
   // Same narrator voice as the incident-triage walkthrough: Google UK English Male. It ships only with Chrome,
@@ -359,27 +360,30 @@
     if(mute.checked||!useClips) return speak(scenes[i].say);
     return new Promise(function(resolve){
       var finished=false;
-      function end(){if(!finished){finished=true;clip.onended=clip.onerror=null;capBar.classList.remove("talking");resolve();}}
-      function fallback(){if(finished)return;useClips=false;finished=true;clip.onended=clip.onerror=null;showFallback();speak(scenes[i].say).then(resolve);}
+      function end(){if(!finished){finished=true;clip.onended=clip.onerror=null;if(finishNarration===end)finishNarration=null;capBar.classList.remove("talking");resolve();}}
+      function fallback(){if(finished)return;useClips=false;finished=true;clip.onended=clip.onerror=null;if(finishNarration===end)finishNarration=null;showFallback();speak(scenes[i].say).then(resolve);}
       capBar.classList.add("talking");
+      finishNarration=end;
       clip.onended=end;clip.onerror=fallback;
       clip.src="audio/scene-"+String(i+1).padStart(2,"0")+".wav";
       var started=clip.play();
       if(started&&started.catch)started.catch(function(e){if(e&&e.name==="AbortError")return;fallback();});
     });
   }
-  function stopVoice(){clip.pause();clip.onended=clip.onerror=null;if(hasSpeech){try{window.speechSynthesis.cancel();}catch(e){}}capBar.classList.remove("talking");}
+  function stopVoice(){clip.pause();clip.onended=clip.onerror=null;if(hasSpeech){try{window.speechSynthesis.cancel();}catch(e){}}if(finishNarration)finishNarration();capBar.classList.remove("talking");}
   function speak(text){
     return new Promise(function(resolve){
-      var finished=false;function end(){if(!finished){finished=true;capBar.classList.remove("talking");resolve();}}
+      var finished=false,timer;
+      function end(){if(!finished){finished=true;clearTimeout(timer);if(finishNarration===end)finishNarration=null;capBar.classList.remove("talking");resolve();}}
       capBar.classList.add("talking");
-      if(mute.checked||!hasSpeech){setTimeout(end,Math.max(4000,text.length*60));return;}
+      finishNarration=end;
+      if(mute.checked||!hasSpeech){timer=setTimeout(end,Math.max(4000,text.length*60));return;}
       try{
         window.speechSynthesis.cancel();
         var u=new SpeechSynthesisUtterance(text);u.rate=.95;u.pitch=1;if(voice)u.voice=voice;
         u.onend=end;u.onerror=end;window.speechSynthesis.speak(u);
-        setTimeout(end,Math.max(7000,text.length*95)); // safety net if the browser never fires onend
-      }catch(e){setTimeout(end,3000);}
+        timer=setTimeout(end,Math.max(7000,text.length*95)); // safety net if the browser never fires onend
+      }catch(e){timer=setTimeout(end,3000);}
     });
   }
   async function playFrom(i){
