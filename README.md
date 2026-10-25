@@ -17,6 +17,9 @@ A TM Forum ODA-patterned BSS proof of concept: reusable Product → CFS catalogu
 ### ▶️ [Watch the narrated walkthrough](https://sandesh113.github.io/BSS-GCP-Agent/)
 <sub>11 scenes · about 4½ minutes · for telecom and BSS teams · hosted with GitHub Pages</sub>
 
+### ☁️ [Launch the live BSS application](https://bss-catalogue-cpq-7053894351.europe-west2.run.app/)
+<sub>Interactive Catalogue Studio and CPQ on Google Cloud · Google sign-in required · access granted only to the authorized operator account</sub>
+
 </div>
 
 ---
@@ -58,6 +61,8 @@ Every order        ──►  decomposes automatically into the CFS actions the 
 ---
 
 ## 🎬 Demo
+
+**[Launch the live BSS application](https://bss-catalogue-cpq-7053894351.europe-west2.run.app/)** to demonstrate product creation, publication, rules, CPQ and ordering from any browser. Google sign-in appears first; only the authorized operator account can open the app. Viewers can watch your demonstration without receiving access to the private cloud service.
 
 > 🎧 **[Narrated walkthrough: from product specification to network-ready service order](https://sandesh113.github.io/BSS-GCP-Agent/)**
 > Animated scenes and real payloads, narrated with Google Gemini text-to-speech. Covers the 10 PS → 7 CFSS library, one-step launch, gated publication, decision tables, CPQ, the AI channel, TMF622 and TMF641 decomposition.
