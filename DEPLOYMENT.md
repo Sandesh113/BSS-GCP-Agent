@@ -7,7 +7,7 @@ Model endpoint: `eu` multi-region (`gemini-3.5-flash`)
 ## Deployed path
 
 ```text
-Authenticated browser proxy -> private Cloud Run catalogue/CPQ UI
+Google sign-in (IAP) -> private Cloud Run catalogue/CPQ UI
                                    |-> private Cloud Storage state (catalogue, rules, quotes, orders)
                                    |-> TMF622-style order, PS-to-CFS actions, draft contract PDF
                                    `-> Pub/Sub customer request
@@ -21,19 +21,23 @@ Terraform is split into `infra/foundation`, `infra/platform`, `infra/ui`, and `i
 
 ## Open the hosted UI
 
-The service is private and grants Cloud Run Invoker to the signed-in operator. Start the authenticated Google Cloud CLI proxy in a PowerShell terminal:
+Open the [hosted Catalogue Studio](https://bss-catalogue-cpq-7053894351.europe-west2.run.app/) in a browser and sign in with the authorized project account. The app runs in Google Cloud; no laptop or local proxy is required. Cloud Run IAP protects the URL and grants browser access only to the configured account. The alternate Cloud Run URL, `https://bss-catalogue-cpq-yzfkynnqbq-nw.a.run.app`, is also valid.
+
+The former CLI proxy command is retained for historical troubleshooting; it has not been re-tested since IAP was enabled:
 
 ```powershell
 & "$env:LOCALAPPDATA\Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd" run services proxy bss-catalogue-cpq --region europe-west2 --project bss-ai-agent-20261021-sandesh --port 8092
 ```
 
-Then open [http://127.0.0.1:8092/](http://127.0.0.1:8092/). Keep that terminal running while using the UI. The stable Cloud Run URL is `https://bss-catalogue-cpq-yzfkynnqbq-nw.a.run.app`; a normal browser request to it does not carry the IAM token. Direct Google sign-in needs first-time IAP OAuth configuration for this standalone trial project. The service has not been made public.
+IAP is configured with a custom OAuth client for the external Google account. The one-time OAuth client is managed in Google Cloud Console; its secret is not stored in this repository. The service has not been made public.
 
-To reopen a submitted POC order for contract download or email, append `?order=<order-id>` to the local proxy URL. The existing order `order-059986ddb78d` is available at `http://127.0.0.1:8092/?order=order-059986ddb78d`.
+To reopen a submitted POC order for contract download or email, append `?order=<order-id>` to the hosted URL.
 
 The **Catalogue Studio** has a **Create with Gemini** button for typed or optional recorded answers. The microphone records a short clip, the private Cloud Run service asks Gemini to transcribe it, and the manager reviews the text before submitting it. It saves a Draft offer to the private state bucket. **Publish offer** validates and activates one, after which it appears when the **CPQ configurator** opens. **Retire offer** stops new sales. CPQ creates quotes and orders for the fictional customer Jason Smith. **Customer request** has a manual preview and an **Ask Gemini** action that runs the Pub/Sub agent path. The contract PDF is downloadable after an acknowledged order. See [GUIDED_CATALOGUE.md](GUIDED_CATALOGUE.md) for the guided flow.
 
 ## Verification performed on 24 October 2026
+
+- Direct browser access, 25 October: enabled IAP on the private Cloud Run service, granted its service agent invoke permission and the operator IAP access, configured a custom OAuth client for this personal project, and loaded the hosted Catalogue Studio in Chrome without localhost. The contract-email OAuth client now lists both Cloud Run origins as well as the local proxy origin. A real Gmail send was not performed in this access test.
 
 - Rule-table cloud release: created `state/rules.json` in the private UI state bucket from the validated seed tables; the hosted `/api/rules` response matched that object. Deployed the spoken/typed rule assistant and shared voice script. A live Gemini draft produced a valid Mobile Mini price rule and new customer input without saving; a cloud quote preview used the saved tables and returned a VALIDATED £12.00 monthly result. The full local suite passed 128 tests, JavaScript syntax checks passed, and UI Terraform reported no drift. The 72-rule design library is still reference material rather than runtime configuration.
 - Expert-review release: rebuilt and deployed the private UI image, Pub/Sub function source, and Vertex agent package. The local suite passed 111 tests and the offline evaluation passed 17/17. One live cloud journey rejected a mismatched TB/GB specification, created an approved quote with `validFor`, submitted a mobile ProductOrder with three CFS actions, downloaded the draft PDF, and received a VALIDATED agent result containing only commercial fields (`eval/live_journey_report.json`). UI and workload Terraform plans both reported no drift afterward. The remaining design items and negative-case coverage are in `TEST_PLAN.md`.
@@ -48,7 +52,7 @@ The **Catalogue Studio** has a **Create with Gemini** button for typed or option
 - A separate live request produced a `VALIDATED` Pub/Sub status event with a Cloud Storage result URI; it was pulled from the status audit subscription.
 - A prior Mobile Mini plus Extra SMS cloud order produced four CFS actions and a readable draft contract PDF (`review/live-cloud-draft-contract.pdf`).
 
-To repeat the application journey while the proxy is running:
+These earlier evaluation commands used the local proxy before IAP was enabled. They have not been re-tested against the new access path:
 
 ```powershell
 .venv\Scripts\python.exe eval\live_journey.py --base-url http://127.0.0.1:8092 --output eval\live_journey_report.json
@@ -62,6 +66,6 @@ The first script is idempotent for catalogue creation but creates a fresh quote 
 
 - Product orders are TMF622-shaped, not TM Forum CTK-certified. CFS actions are proposed payloads; no HSS, packet gateway, SMSC or other network activation occurs.
 - The PDF is explicitly a draft summary. Provider legal details, VAT-inclusive charges, cancellation terms, consent and other final contract requirements remain unconfigured.
-- Contract email uses the Gmail API after the operator clicks **Email draft PDF with Google** and authorizes the sending mailbox. The app requests a short-lived token with `gmail.send`, `openid`, and `email`; it does not store a mailbox password or refresh token. `GMAIL_SENDER_EMAIL` restricts the sending identity. The Google Auth Platform web client must include the local proxy origin `http://127.0.0.1:8092`, and the sender must be a test user while the OAuth app remains in Testing. Gmail acceptance returns a message ID; inbox delivery is checked separately. The draft is not a binding contract.
-- Direct IAP sign-in, role-specific catalogue approval, automated deployment, and live catalogue federation are future work.
+- Contract email uses the Gmail API after the operator clicks **Email draft PDF with Google** and authorizes the sending mailbox. The app requests a short-lived token with `gmail.send`, `openid`, and `email`; it does not store a mailbox password or refresh token. `GMAIL_SENDER_EMAIL` restricts the sending identity. The Google Auth Platform web client includes both hosted Cloud Run origins and the local proxy origin; the sender must be a test user while the OAuth app remains in Testing. Gmail acceptance returns a message ID; inbox delivery is checked separately. The draft is not a binding contract.
+- Role-specific catalogue approval, automated deployment, and live catalogue federation are future work.
 - Cloud Storage state is suitable for this single-instance POC. A multi-instance deployment needs transactional storage and a fuller authorisation model.

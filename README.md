@@ -117,7 +117,7 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    USER["🧑‍💻 Operator browser"] -- "IAM-authenticated proxy" --> UI
+    USER["🧑‍💻 Operator browser"] -- "Google sign-in through IAP" --> UI
 
     subgraph GCP["☁️ Google Cloud · europe-west2 (London) · Terraform-managed"]
         UI["Cloud Run · bss-catalogue-cpq<br/>Catalogue Studio · Rules · CPQ<br/>TMF622 API · contract PDF"]
@@ -269,7 +269,7 @@ python -m venv .venv
 .venv\Scripts\python.exe eval\run_local.py --output eval\local_report.json
 ```
 
-Local mode keeps state in `ui/*.json`. Gemini features (guided offers, spoken rules, the agent) need the cloud deployment or Vertex AI credentials. The hosted app is private: open it through `gcloud run services proxy`, as described in [DEPLOYMENT.md](DEPLOYMENT.md).
+Local mode keeps state in `ui/*.json`. Gemini features (guided offers, spoken rules, the agent) need the cloud deployment or Vertex AI credentials. The [hosted app](https://bss-catalogue-cpq-7053894351.europe-west2.run.app/) is private and opens directly with Google sign-in; see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 <details>
 <summary>🗂️ <b>Repository map</b></summary>

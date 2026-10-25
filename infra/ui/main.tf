@@ -46,6 +46,12 @@ resource "google_project_service" "gmail" {
   disable_on_destroy = false
 }
 
+resource "google_project_service" "iap" {
+  project            = var.project_id
+  service            = "iap.googleapis.com"
+  disable_on_destroy = false
+}
+
 locals { labels = { app = "bss-ai-agent", environment = "demo", managed_by = "terraform" } }
 
 data "google_project" "current" { project_id = var.project_id }
@@ -138,6 +144,7 @@ resource "google_cloud_run_v2_service" "ui" {
   name                = "bss-catalogue-cpq"
   location            = var.region
   ingress             = "INGRESS_TRAFFIC_ALL"
+  iap_enabled         = true
   deletion_protection = false
   labels              = local.labels
 
@@ -196,7 +203,23 @@ resource "google_cloud_run_v2_service" "ui" {
       }
     }
   }
-  depends_on = [google_storage_bucket_iam_member.state_editor, google_project_iam_member.ui_model_predict]
+  depends_on = [google_storage_bucket_iam_member.state_editor, google_project_iam_member.ui_model_predict, google_project_service.iap]
+}
+
+resource "google_cloud_run_v2_service_iam_member" "iap_invoker" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.ui.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-iap.iam.gserviceaccount.com"
+}
+
+resource "google_iap_web_cloud_run_service_iam_member" "operator" {
+  project                = var.project_id
+  location               = var.region
+  cloud_run_service_name = google_cloud_run_v2_service.ui.name
+  role                   = "roles/iap.httpsResourceAccessor"
+  member                 = "user:${var.operator_email}"
 }
 
 resource "google_cloud_run_v2_service_iam_member" "operator_invoker" {
